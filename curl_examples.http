@@ -1,0 +1,26 @@
+### Health check
+GET http://127.0.0.1:8000/health
+
+### Ingest the PDFs in data/pdfs
+POST http://127.0.0.1:8000/ingest?reset=true
+
+### Ask a general question
+POST http://127.0.0.1:8000/ask
+Content-Type: application/json
+
+{
+  "question": "What equipment do I need for olive oil production?",
+  "k": 4
+}
+
+### Ask with a metadata filter
+POST http://127.0.0.1:8000/ask
+Content-Type: application/json
+
+{
+  "question": "How can I package food products better?",
+  "k": 4,
+  "filters": {
+    "doc_type": "forum"
+  }
+}

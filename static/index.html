@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profood AI Assistant</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 430px;
+      height: 650px;
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #1f7a3f;
+      color: white;
+      padding: 18px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      padding: 12px 14px;
+      border-radius: 14px;
+      max-width: 80%;
+      line-height: 1.4;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #ffb347;
+      color: #222;
+      border-bottom-right-radius: 4px;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #e9f5ec;
+      color: #222;
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    button {
+      background: #1f7a3f;
+      color: white;
+      border: none;
+      padding: 0 18px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #166130;
+    }
+
+    .sources {
+      font-size: 12px;
+      color: #555;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="chat-header">
+      Profood AI Assistant
+    </div>
+
+    <div id="chatBox" class="chat-box">
+      <div class="message bot">
+        Hello! Ask me about Profood products, equipment, suppliers, or forum information.
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input 
+        id="questionInput" 
+        type="text" 
+        placeholder="Ask something..." 
+        onkeydown="handleKey(event)"
+      />
+      <button onclick="sendQuestion()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chatBox");
+    const questionInput = document.getElementById("questionInput");
+
+    function addMessage(text, sender) {
+      const message = document.createElement("div");
+      message.className = `message ${sender}`;
+      message.textContent = text;
+      chatBox.appendChild(message);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKey(event) {
+      if (event.key === "Enter") {
+        sendQuestion();
+      }
+    }
+
+    async function sendQuestion() {
+      const question = questionInput.value.trim();
+
+      if (!question) return;
+
+      addMessage(question, "user");
+      questionInput.value = "";
+
+      addMessage("Thinking...", "bot");
+
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            question: question,
+            k: 4
+          })
+        });
+
+        const data = await response.json();
+
+        chatBox.removeChild(chatBox.lastChild);
+
+        let answer = data.answer || "No answer received.";
+
+        if (data.sources && data.sources.length > 0) {
+          answer += "\n\nSources:\n";
+          data.sources.forEach((source, index) => {
+            answer += `${index + 1}. ${source.source || "Unknown source"}\n`;
+          });
+        }
+
+        addMessage(answer, "bot");
+
+      } catch (error) {
+        chatBox.removeChild(chatBox.lastChild);
+        addMessage("Error: Could not connect to the API.", "bot");
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
