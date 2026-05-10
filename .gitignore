@@ -1,6 +1,17 @@
+# Python
 .venv/
+my_env/
 __pycache__/
 *.pyc
 .env
-data/chroma/*
-!data/chroma/.gitkeep
+data/chroma/
+
+# Node / Angular / Express
+node_modules/
+dist/
+.angular/
+
+# OS / editor
+.vscode/
+.DS_Store
+Thumbs.db
