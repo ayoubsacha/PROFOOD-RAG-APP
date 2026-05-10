@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import csv
+import json
 import shutil
 from pathlib import Path
 from typing import Any
 
+from docx import Document as WordDocument
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from openpyxl import load_workbook
 
 from app.config import settings
 
@@ -39,8 +44,10 @@ def _project_root() -> Path:
 
 def _resolve_path(path_value: str) -> Path:
     path = Path(path_value)
+
     if path.is_absolute():
         return path
+
     return _project_root() / path
 
 
@@ -62,6 +69,7 @@ def get_llm() -> ChatOllama:
 def get_vector_store() -> Chroma:
     chroma_dir = _resolve_path(settings.chroma_dir)
     chroma_dir.mkdir(parents=True, exist_ok=True)
+
     return Chroma(
         collection_name=settings.collection_name,
         embedding_function=get_embeddings(),
@@ -71,55 +79,425 @@ def get_vector_store() -> Chroma:
 
 def _guess_doc_type(source_path: str) -> str:
     name = Path(source_path).name.lower()
+
     if "equipment" in name or "equipement" in name:
         return "equipment"
+
     if "forum" in name or "faq" in name:
         return "forum"
+
     if "product" in name or "produit" in name:
         return "product"
+
+    if "supplier" in name or "fournisseur" in name:
+        return "supplier"
+
+    if "article" in name or "guide" in name:
+        return "article"
+
     return "document"
 
 
-def load_pdf_documents() -> list:
-    pdf_dir = _resolve_path(settings.pdf_dir)
-    pdf_dir.mkdir(parents=True, exist_ok=True)
-    loader = PyPDFDirectoryLoader(str(pdf_dir))
-    docs = loader.load()
+def _dict_to_text(data: dict[str, Any]) -> str:
+    """
+    Convert a dictionary row/object into readable text for RAG.
 
-    for doc in docs:
-        source = doc.metadata.get("source", "")
-        doc.metadata["doc_type"] = _guess_doc_type(source)
-        doc.metadata["source_file"] = Path(source).name if source else None
+    Example:
+    {
+        "name": "Olive oil press",
+        "type": "equipment"
+    }
+
+    becomes:
+
+    name: Olive oil press
+    type: equipment
+    """
+
+    lines: list[str] = []
+
+    for key, value in data.items():
+        if value is None:
+            continue
+
+        if isinstance(value, (dict, list)):
+            value = json.dumps(value, ensure_ascii=False)
+
+        value_as_text = str(value).strip()
+
+        if value_as_text:
+            lines.append(f"{key}: {value_as_text}")
+
+    return "\n".join(lines)
+
+
+def _load_text_file(file_path: Path) -> list[Document]:
+    """
+    Load simple text files:
+    - .txt
+    - .md
+
+    One file becomes one LangChain Document.
+    """
+
+    content = file_path.read_text(encoding="utf-8").strip()
+
+    if not content:
+        return []
+
+    return [
+        Document(
+            page_content=content,
+            metadata={
+                "source": str(file_path),
+                "source_file": file_path.name,
+                "doc_type": _guess_doc_type(file_path.name),
+                "file_type": file_path.suffix.lower(),
+            },
+        )
+    ]
+
+
+def _load_json_file(file_path: Path) -> list[Document]:
+    """
+    Load JSON files.
+
+    Supported shapes:
+
+    1. List of objects:
+    [
+        {"type": "product", "name": "Olive oil"},
+        {"type": "equipment", "name": "Olive oil press"}
+    ]
+
+    2. Single object:
+    {
+        "type": "article",
+        "title": "Olive oil guide"
+    }
+    """
+
+    content = file_path.read_text(encoding="utf-8")
+    data = json.loads(content)
+
+    docs: list[Document] = []
+
+    if isinstance(data, list):
+        for index, item in enumerate(data, start=1):
+            if isinstance(item, dict):
+                page_content = _dict_to_text(item)
+                doc_type = str(item.get("type") or item.get("doc_type") or _guess_doc_type(file_path.name))
+            else:
+                page_content = str(item)
+                doc_type = _guess_doc_type(file_path.name)
+
+            if not page_content.strip():
+                continue
+
+            docs.append(
+                Document(
+                    page_content=page_content,
+                    metadata={
+                        "source": str(file_path),
+                        "source_file": file_path.name,
+                        "doc_type": doc_type,
+                        "file_type": ".json",
+                        "record_index": index,
+                    },
+                )
+            )
+
+    elif isinstance(data, dict):
+        page_content = _dict_to_text(data)
+        doc_type = str(data.get("type") or data.get("doc_type") or _guess_doc_type(file_path.name))
+
+        if page_content.strip():
+            docs.append(
+                Document(
+                    page_content=page_content,
+                    metadata={
+                        "source": str(file_path),
+                        "source_file": file_path.name,
+                        "doc_type": doc_type,
+                        "file_type": ".json",
+                    },
+                )
+            )
+
+    else:
+        page_content = str(data).strip()
+
+        if page_content:
+            docs.append(
+                Document(
+                    page_content=page_content,
+                    metadata={
+                        "source": str(file_path),
+                        "source_file": file_path.name,
+                        "doc_type": _guess_doc_type(file_path.name),
+                        "file_type": ".json",
+                    },
+                )
+            )
 
     return docs
 
 
-def split_documents(docs: list) -> list:
+def _load_csv_file(file_path: Path) -> list[Document]:
+    """
+    Load CSV files.
+
+    Each row becomes one LangChain Document.
+    """
+
+    docs: list[Document] = []
+
+    with file_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
+        reader = csv.DictReader(csv_file)
+
+        for index, row in enumerate(reader, start=1):
+            page_content = _dict_to_text(row)
+
+            if not page_content.strip():
+                continue
+
+            doc_type = str(row.get("type") or row.get("doc_type") or _guess_doc_type(file_path.name))
+
+            docs.append(
+                Document(
+                    page_content=page_content,
+                    metadata={
+                        "source": str(file_path),
+                        "source_file": file_path.name,
+                        "doc_type": doc_type,
+                        "file_type": ".csv",
+                        "record_index": index,
+                    },
+                )
+            )
+
+    return docs
+
+
+def _load_docx_file(file_path: Path) -> list[Document]:
+    """
+    Load Word .docx files.
+
+    It reads:
+    - normal paragraphs
+    - tables
+    """
+
+    word_doc = WordDocument(str(file_path))
+
+    parts: list[str] = []
+
+    for paragraph in word_doc.paragraphs:
+        text = paragraph.text.strip()
+
+        if text:
+            parts.append(text)
+
+    for table_index, table in enumerate(word_doc.tables, start=1):
+        rows_text: list[str] = []
+
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells]
+            row_text = " | ".join(cells).strip()
+
+            if row_text:
+                rows_text.append(row_text)
+
+        if rows_text:
+            parts.append(f"Table {table_index}:\n" + "\n".join(rows_text))
+
+    content = "\n\n".join(parts).strip()
+
+    if not content:
+        return []
+
+    return [
+        Document(
+            page_content=content,
+            metadata={
+                "source": str(file_path),
+                "source_file": file_path.name,
+                "doc_type": _guess_doc_type(file_path.name),
+                "file_type": ".docx",
+            },
+        )
+    ]
+
+
+def _load_excel_file(file_path: Path) -> list[Document]:
+    """
+    Load Excel files.
+
+    Supported:
+    - .xlsx
+    - .xlsm
+    - .xltx
+    - .xltm
+
+    Each sheet becomes one LangChain Document.
+    """
+
+    workbook = load_workbook(
+        filename=str(file_path),
+        read_only=True,
+        data_only=True,
+    )
+
+    docs: list[Document] = []
+
+    try:
+        for sheet_name in workbook.sheetnames:
+            sheet = workbook[sheet_name]
+            rows_text: list[str] = []
+
+            for row in sheet.iter_rows(values_only=True):
+                values: list[str] = []
+
+                for value in row:
+                    if value is None:
+                        values.append("")
+                    else:
+                        values.append(str(value).strip())
+
+                if any(cell for cell in values):
+                    rows_text.append(" | ".join(values))
+
+            content = "\n".join(rows_text).strip()
+
+            if not content:
+                continue
+
+            docs.append(
+                Document(
+                    page_content=f"Excel sheet: {sheet_name}\n\n{content}",
+                    metadata={
+                        "source": str(file_path),
+                        "source_file": file_path.name,
+                        "doc_type": _guess_doc_type(file_path.name),
+                        "file_type": file_path.suffix.lower(),
+                        "sheet_name": sheet_name,
+                    },
+                )
+            )
+
+    finally:
+        workbook.close()
+
+    return docs
+
+
+def load_documents() -> list[Document]:
+    """
+    Load all supported documents from the documents folder.
+
+    Currently the folder comes from:
+    settings.pdf_dir
+
+    Even if the name is pdf_dir, it can now contain:
+    - PDF
+    - TXT
+    - Markdown
+    - JSON
+    - CSV
+    - DOCX
+    - Excel
+    """
+
+    documents_dir = _resolve_path(settings.pdf_dir)
+    documents_dir.mkdir(parents=True, exist_ok=True)
+
+    docs: list[Document] = []
+
+    # 1. Load PDF files
+    pdf_loader = PyPDFDirectoryLoader(str(documents_dir))
+    pdf_docs = pdf_loader.load()
+
+    for doc in pdf_docs:
+        source = doc.metadata.get("source", "")
+
+        doc.metadata["doc_type"] = _guess_doc_type(source)
+        doc.metadata["source_file"] = Path(source).name if source else "unknown"
+        doc.metadata["file_type"] = ".pdf"
+
+    docs.extend(pdf_docs)
+
+    # 2. Load other supported file types
+    for file_path in documents_dir.rglob("*"):
+        if not file_path.is_file():
+            continue
+
+        suffix = file_path.suffix.lower()
+
+        if suffix == ".pdf":
+            continue
+
+        if suffix in {".txt", ".md"}:
+            docs.extend(_load_text_file(file_path))
+
+        elif suffix == ".json":
+            docs.extend(_load_json_file(file_path))
+
+        elif suffix == ".csv":
+            docs.extend(_load_csv_file(file_path))
+
+        elif suffix == ".docx":
+            docs.extend(_load_docx_file(file_path))
+
+        elif suffix in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
+            docs.extend(_load_excel_file(file_path))
+
+    return docs
+
+
+def split_documents(docs: list[Document]) -> list[Document]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=settings.chunk_size,
         chunk_overlap=settings.chunk_overlap,
         separators=["\n\n", "\n", ". ", " ", ""],
     )
+
     return splitter.split_documents(docs)
 
 
 def reset_vector_store() -> None:
     chroma_dir = _resolve_path(settings.chroma_dir)
+
     if chroma_dir.exists():
         shutil.rmtree(chroma_dir)
+
     chroma_dir.mkdir(parents=True, exist_ok=True)
 
 
 def ingest_pdfs(reset: bool = True) -> dict[str, Any]:
+    """
+    Ingest documents into ChromaDB.
+
+    The function name stays ingest_pdfs() so main.py does not need changes.
+
+    But now it supports:
+    - PDF
+    - TXT
+    - Markdown
+    - JSON
+    - CSV
+    - DOCX
+    - Excel
+    """
+
     if reset:
         reset_vector_store()
 
-    docs = load_pdf_documents()
+    docs = load_documents()
     chunks = split_documents(docs)
 
     if not chunks:
         return {
-            "message": "No PDF content found. Add PDF files to data/pdfs and try again.",
+            "message": "No document content found. Add PDF, TXT, MD, JSON, CSV, DOCX, or Excel files and try again.",
             "loaded_documents": 0,
             "created_chunks": 0,
             "chroma_dir": str(_resolve_path(settings.chroma_dir)),
@@ -130,7 +508,7 @@ def ingest_pdfs(reset: bool = True) -> dict[str, Any]:
     vector_store.add_documents(chunks)
 
     return {
-        "message": "PDFs ingested successfully.",
+        "message": "Documents ingested successfully.",
         "loaded_documents": len(docs),
         "created_chunks": len(chunks),
         "chroma_dir": str(_resolve_path(settings.chroma_dir)),
@@ -138,21 +516,34 @@ def ingest_pdfs(reset: bool = True) -> dict[str, Any]:
     }
 
 
-def _format_context(docs: list) -> str:
-    blocks = []
+def _format_context(docs: list[Document]) -> str:
+    blocks: list[str] = []
+
     for i, doc in enumerate(docs, start=1):
         source_file = doc.metadata.get("source_file") or doc.metadata.get("source") or "unknown"
         page = doc.metadata.get("page")
         doc_type = doc.metadata.get("doc_type", "document")
+        file_type = doc.metadata.get("file_type", "unknown")
+
         blocks.append(
-            f"[Source {i}] file={source_file}, page={page}, type={doc_type}\n{doc.page_content}"
+            f"[Source {i}] file={source_file}, page={page}, type={doc_type}, file_type={file_type}\n"
+            f"{doc.page_content}"
         )
+
     return "\n\n".join(blocks)
 
 
-def ask(question: str, k: int | None = None, filters: dict[str, Any] | None = None) -> dict[str, Any]:
+def ask(
+    question: str,
+    k: int | None = None,
+    filters: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     vector_store = get_vector_store()
-    search_kwargs: dict[str, Any] = {"k": k or settings.top_k}
+
+    search_kwargs: dict[str, Any] = {
+        "k": k or settings.top_k,
+    }
+
     if filters:
         search_kwargs["filter"] = filters
 
@@ -161,15 +552,23 @@ def ask(question: str, k: int | None = None, filters: dict[str, Any] | None = No
 
     if not docs:
         return {
-            "answer": "Profood does not have enough data yet. Try ingesting PDFs first with POST /ingest.",
+            "answer": "Profood does not have enough data yet. Try ingesting documents first with POST /ingest.",
             "sources": [],
         }
 
     context = _format_context(docs)
+
     chain = PROMPT | get_llm()
-    response = chain.invoke({"context": context, "question": question})
+
+    response = chain.invoke(
+        {
+            "context": context,
+            "question": question,
+        }
+    )
 
     sources = []
+
     for doc in docs:
         sources.append(
             {
@@ -181,4 +580,7 @@ def ask(question: str, k: int | None = None, filters: dict[str, Any] | None = No
             }
         )
 
-    return {"answer": response.content, "sources": sources}
+    return {
+        "answer": response.content,
+        "sources": sources,
+    }
