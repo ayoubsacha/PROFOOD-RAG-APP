@@ -1,0 +1,150 @@
+<main class="page">
+  <section class="hero">
+    <div class="hero-badge">ProFood RAG App</div>
+
+    <h1>ProFood Authentication</h1>
+
+    <p>
+      Connectez-vous pour acceder a l'assistant intelligent RAG avec JWT,
+      MongoDB, Express.js, Angular et FastAPI.
+    </p>
+
+    <div class="tech-list">
+      <span>Express.js API</span>
+      <span>MongoDB Atlas</span>
+      <span>JWT Token</span>
+      <span>FastAPI RAG</span>
+      <span>Ollama</span>
+    </div>
+  </section>
+
+  <section class="auth-card">
+    <div class="tabs">
+      <button
+        type="button"
+        [class.active]="activeTab === 'login'"
+        (click)="switchTab('login')"
+      >
+        Login
+      </button>
+
+      <button
+        type="button"
+        [class.active]="activeTab === 'register'"
+        (click)="switchTab('register')"
+      >
+        Register
+      </button>
+    </div>
+
+    <form
+      *ngIf="activeTab === 'login'"
+      class="form"
+      (ngSubmit)="login()"
+    >
+      <label>
+        Email
+        <input
+          type="email"
+          name="loginEmail"
+          [(ngModel)]="loginForm.email"
+          placeholder="client@profood.ma"
+          required
+        />
+      </label>
+
+      <label>
+        Password
+        <input
+          type="password"
+          name="loginPassword"
+          [(ngModel)]="loginForm.password"
+          placeholder="******"
+          required
+        />
+      </label>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Please wait...' : 'Login' }}
+      </button>
+    </form>
+
+    <form
+      *ngIf="activeTab === 'register'"
+      class="form"
+      (ngSubmit)="register()"
+    >
+      <label>
+        Name
+        <input
+          type="text"
+          name="registerName"
+          [(ngModel)]="registerForm.name"
+          placeholder="Ayoub"
+          required
+        />
+      </label>
+
+      <label>
+        Email
+        <input
+          type="email"
+          name="registerEmail"
+          [(ngModel)]="registerForm.email"
+          placeholder="ayoub@profood.ma"
+          required
+        />
+      </label>
+
+      <label>
+        Password
+        <input
+          type="password"
+          name="registerPassword"
+          [(ngModel)]="registerForm.password"
+          placeholder="Minimum 6 characters"
+          required
+        />
+      </label>
+
+      <label>
+        Role
+        <select
+          name="registerRole"
+          [(ngModel)]="registerForm.role"
+        >
+          <option value="CLIENT">CLIENT</option>
+          <option value="FOURNISSEUR">FOURNISSEUR</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="MODERATEUR">MODERATEUR</option>
+        </select>
+      </label>
+
+      <label>
+        Company name
+        <input
+          type="text"
+          name="companyName"
+          [(ngModel)]="registerForm.companyName"
+          placeholder="Restaurant Tanger Food"
+        />
+      </label>
+
+      <label>
+        Phone
+        <input
+          type="text"
+          name="phone"
+          [(ngModel)]="registerForm.phone"
+          placeholder="+212 6 00 00 00 00"
+        />
+      </label>
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Please wait...' : 'Create account' }}
+      </button>
+    </form>
+
+    <p class="error-message" *ngIf="result">{{ result }}</p>
+  </section>
+</main>

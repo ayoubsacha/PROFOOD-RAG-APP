@@ -4,83 +4,98 @@
   (click)="toggleChat()"
   aria-label="Open ProFood assistant"
 >
-  <span>💬</span>
+  <span>AI</span>
 </button>
 
 <div class="chat-window" *ngIf="isOpen">
   <div class="chat-header">
-    <div class="chat-brand">
-      <div class="brand-icon">P</div>
-
-      <div>
-        <h3>ProFood Assistant</h3>
-        <p>Produits · Équipements · Services</p>
-      </div>
+    <div>
+      <h3>ProFood Assistant</h3>
+      <p>{{ currentSessionTitle }}</p>
     </div>
 
-    <button
-      class="close-btn"
-      type="button"
-      (click)="toggleChat()"
-    >
-      ×
+    <button class="icon-btn" type="button" (click)="toggleChat()" aria-label="Close chat">
+      x
     </button>
   </div>
 
-  <div class="chat-body">
-    <div
-      *ngFor="let message of messages"
-      class="message-wrapper"
-      [class.user-wrapper]="message.role === 'user'"
-      [class.assistant-wrapper]="message.role === 'assistant'"
-    >
-      <div
-        class="message"
-        [class.user]="message.role === 'user'"
-        [class.assistant]="message.role === 'assistant'"
+  <div class="chat-shell">
+    <aside class="sessions">
+      <button class="new-session" type="button" (click)="startNewSession()" [disabled]="sessionsLoading">
+        New chat
+      </button>
+
+      <p class="session-status" *ngIf="sessionsLoading">Loading sessions...</p>
+      <p class="session-status" *ngIf="statusMessage">{{ statusMessage }}</p>
+
+      <button
+        class="session-item"
+        type="button"
+        *ngFor="let session of sessions"
+        [class.active]="session.id === currentSessionId"
+        (click)="selectSession(session.id)"
       >
-        {{ message.text }}
+        <strong>{{ session.title }}</strong>
+        <span>{{ session.message_count }} messages</span>
+      </button>
+
+      <button
+        class="delete-session"
+        type="button"
+        (click)="deleteCurrentSession()"
+        [disabled]="!currentSessionId || sessionsLoading"
+      >
+        Delete current
+      </button>
+    </aside>
+
+    <section class="chat-panel">
+      <div class="chat-body">
+        <div
+          *ngFor="let message of messages"
+          class="message-wrapper"
+          [class.user-wrapper]="message.role === 'user'"
+        >
+          <div
+            class="message"
+            [class.user]="message.role === 'user'"
+            [class.assistant]="message.role === 'assistant'"
+          >
+            {{ message.text }}
+          </div>
+
+          <div class="sources" *ngIf="message.sources && message.sources.length > 0">
+            <p>Sources utilisees</p>
+
+            <ul>
+              <li *ngFor="let source of message.sources.slice(0, 3)">
+                {{ source.source || 'Document' }}
+                <span *ngIf="source.page !== undefined && source.page !== null">
+                  - page {{ source.page }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="typing" *ngIf="loading">
+          ProFood AI reflechit...
+        </div>
       </div>
 
-      <div
-        class="sources"
-        *ngIf="message.sources && message.sources.length > 0"
-      >
-        <p>Sources utilisées :</p>
+      <form class="chat-input" (ngSubmit)="sendMessage()">
+        <input
+          type="text"
+          name="question"
+          [(ngModel)]="question"
+          placeholder="Posez votre question..."
+          autocomplete="off"
+        />
 
-        <ul>
-          <li *ngFor="let source of message.sources.slice(0, 3)">
-            {{ source.source || 'Document' }}
-            <span *ngIf="source.page !== undefined">
-              — page {{ source.page }}
-            </span>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="typing" *ngIf="loading">
-      <span></span>
-      <span></span>
-      <span></span>
-      ProFood AI réfléchit...
-    </div>
+        <button type="submit" [disabled]="loading || !question.trim()">
+          Send
+        </button>
+      </form>
+    </section>
   </div>
-
-  <form class="chat-input" (ngSubmit)="sendMessage()">
-    <input
-      type="text"
-      name="question"
-      [(ngModel)]="question"
-      placeholder="Posez votre question..."
-      autocomplete="off"
-    />
-
-    <button
-      type="submit"
-      [disabled]="loading || !question.trim()"
-    >
-      Envoyer
-    </button>
-  </form>
 </div>

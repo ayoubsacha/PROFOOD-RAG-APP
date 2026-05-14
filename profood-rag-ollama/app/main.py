@@ -1,20 +1,33 @@
 from pathlib import Path
 from typing import Annotated
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from fastapi import Depends
-from app.auth import get_current_user
 
-from pathlib import Path
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
+from app.auth import get_current_user
+from app.chat_history import (
+    ChatSessionNotFound,
+    add_assistant_message,
+    add_user_message,
+    create_chat_session,
+    delete_chat_session,
+    ensure_chat_session,
+    get_chat_session,
+    list_chat_sessions,
+)
 from app.config import settings
 from app.rag import _resolve_path, ask, ingest_pdfs, reset_vector_store
-from app.schemas import AskRequest, AskResponse, IngestResponse
+from app.schemas import (
+    AskRequest,
+    AskResponse,
+    ChatSession,
+    ChatSessionCreateRequest,
+    ChatSessionSummary,
+    IngestResponse,
+)
+
 
 app = FastAPI(
     title="Profood Simple RAG API",
@@ -28,25 +41,6 @@ STATIC_DIR = PROJECT_ROOT / "static"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-
-@app.get("/")
-def serve_frontend():
-    index_file = STATIC_DIR / "index.html"
-
-    if index_file.exists():
-        return FileResponse(index_file)
-
-    return {
-        "message": "Profood RAG API is running",
-        "docs": "/docs"
-    }
-
-
-
-@app.get("/")
-def home():
-    return FileResponse("static/index.html")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -56,8 +50,13 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-def root() -> dict:
+@app.get("/", response_model=None)
+def root() -> dict | FileResponse:
+    index_file = STATIC_DIR / "index.html"
+
+    if index_file.exists():
+        return FileResponse(index_file)
+
     return {
         "message": "Profood Simple RAG API is running.",
         "docs": "/docs",
@@ -95,8 +94,86 @@ def ingest(reset: bool = True) -> dict:
         ) from exc
 
 
+@app.post("/chat/sessions", response_model=ChatSession)
+async def create_session(
+    payload: ChatSessionCreateRequest | None = Body(default=None),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    user_id = current_user["user_id"]
+    title = payload.title if payload else None
+
+    try:
+        return await create_chat_session(user_id=user_id, title=title)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat session creation failed. Original error: {exc}",
+        ) from exc
+
+
+@app.get("/chat/sessions", response_model=list[ChatSessionSummary])
+async def get_sessions(
+    current_user: dict = Depends(get_current_user),
+) -> list[dict]:
+    user_id = current_user["user_id"]
+
+    try:
+        return await list_chat_sessions(user_id=user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat session listing failed. Original error: {exc}",
+        ) from exc
+
+
+@app.get("/chat/sessions/{session_id}", response_model=ChatSession)
+async def get_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    user_id = current_user["user_id"]
+
+    try:
+        session = await get_chat_session(user_id=user_id, session_id=session_id)
+    except ChatSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="Chat session not found") from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat session lookup failed. Original error: {exc}",
+        ) from exc
+
+    if not session:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    return session
+
+
+@app.delete("/chat/sessions/{session_id}")
+async def delete_session(
+    session_id: str,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    user_id = current_user["user_id"]
+
+    try:
+        deleted = await delete_chat_session(user_id=user_id, session_id=session_id)
+    except ChatSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="Chat session not found") from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat session deletion failed. Original error: {exc}",
+        ) from exc
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    return {"message": "Chat session deleted."}
+
+
 @app.post("/ask", response_model=AskResponse)
-def ask_question(
+async def ask_question(
     payload: AskRequest,
     current_user: dict = Depends(get_current_user),
 ) -> dict:
@@ -105,12 +182,40 @@ def ask_question(
 
         print("Current RAG user:", user_id)
 
-        return ask(
+        session = await ensure_chat_session(
+            user_id=user_id,
+            session_id=payload.session_id,
+            title=payload.question,
+        )
+        session_id = session["id"]
+
+        await add_user_message(
+            user_id=user_id,
+            session_id=session_id,
+            content=payload.question,
+        )
+
+        rag_response = ask(
             question=payload.question,
             k=payload.k,
             filters=payload.filters,
         )
 
+        await add_assistant_message(
+            user_id=user_id,
+            session_id=session_id,
+            content=rag_response["answer"],
+            sources=rag_response.get("sources", []),
+        )
+
+        return {
+            "answer": rag_response["answer"],
+            "sources": rag_response.get("sources", []),
+            "session_id": session_id,
+        }
+
+    except ChatSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="Chat session not found") from exc
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -119,6 +224,7 @@ def ask_question(
                 f"and documents have been ingested. Original error: {exc}"
             ),
         ) from exc
+
 
 @app.post("/upload-pdfs")
 async def upload_pdfs(files: Annotated[list[UploadFile], File(...)]) -> dict:
