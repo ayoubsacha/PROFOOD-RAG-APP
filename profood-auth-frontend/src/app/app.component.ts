@@ -9,9 +9,6 @@ import {
   AuthUser,
   MeResponse
 } from './auth.service';
-
-import { ChatbotWidgetComponent } from './chatbot-widget/chatbot-widget.component';
-
 type Tab = 'login' | 'register';
 
 @Component({
@@ -20,7 +17,6 @@ type Tab = 'login' | 'register';
   imports: [
     CommonModule,
     FormsModule,
-    ChatbotWidgetComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'

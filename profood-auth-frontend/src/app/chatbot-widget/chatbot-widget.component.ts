@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../auth.service';
-import { ChatbotService, SourceChunk } from '../chatbot.service';
+import { ChatbotService, AskResponse, SourceChunk } from '../chatbot.service';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -22,6 +22,8 @@ export class ChatbotWidgetComponent {
   isOpen = false;
   loading = false;
   question = '';
+
+  currentSessionId: string | null = null;
 
   messages: ChatMessage[] = [
     {
@@ -63,8 +65,10 @@ export class ChatbotWidgetComponent {
     this.question = '';
     this.loading = true;
 
-    this.chatbotService.ask(cleanQuestion, token).subscribe({
-      next: (response) => {
+    this.chatbotService.ask(cleanQuestion, token, this.currentSessionId).subscribe({
+      next: (response: AskResponse) => {
+        this.currentSessionId = response.session_id || null;
+
         this.messages.push({
           role: 'assistant',
           text: response.answer,
@@ -72,7 +76,7 @@ export class ChatbotWidgetComponent {
         });
       },
 
-      error: (error) => {
+      error: (error: unknown) => {
         console.error(error);
 
         this.messages.push({

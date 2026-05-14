@@ -13,6 +13,7 @@ export interface SourceChunk {
 export interface AskResponse {
   answer: string;
   sources: SourceChunk[];
+  session_id?: string;
 }
 
 @Injectable({
@@ -23,9 +24,9 @@ export class ChatbotService {
 
   constructor(private readonly http: HttpClient) {}
 
-  ask(question: string, token: string): Observable<AskResponse> {
+  ask(question: string, token: string, sessionId?: string | null): Observable<AskResponse> {
     const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${token}`
     });
 
     return this.http.post<AskResponse>(
@@ -34,6 +35,7 @@ export class ChatbotService {
         question,
         k: 4,
         filters: null,
+        session_id: sessionId || null
       },
       { headers }
     );
