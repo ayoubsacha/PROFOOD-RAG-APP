@@ -1,120 +1,188 @@
-<main class="page-shell">
-  <section class="hero-card">
-    <div>
-      <div class="logo-box">P</div>
-      <p class="eyebrow">Profood Authentication</p>
-      <h1>Test auth before connecting it to the RAG assistant.</h1>
-      <p class="hero-text">
-        This Angular frontend talks to your Express.js API, stores the JWT token,
-        and lets you test register, login, logout, and <code>/auth/me</code>.
-      </p>
+<main class="page">
+  <section class="hero">
+    <div class="hero-badge">ProFood RAG App</div>
 
-      <div class="feature-grid">
-        <span>Express.js API</span>
-        <span>MongoDB Atlas</span>
-        <span>JWT Token</span>
-        <span>Ready for RAG</span>
-      </div>
-    </div>
+    <h1>ProFood Authentication</h1>
 
-    <div class="integration-note">
-      Later, this test auth can be replaced with the company's real auth system.
-      The RAG service should only depend on a trusted <strong>user_id</strong>.
+    <p>
+      Connectez-vous pour tester l’assistant intelligent RAG avec JWT,
+      MongoDB, Express.js, Angular et FastAPI.
+    </p>
+
+    <div class="tech-list">
+      <span>Express.js API</span>
+      <span>MongoDB Atlas</span>
+      <span>JWT Token</span>
+      <span>FastAPI RAG</span>
+      <span>Ollama</span>
     </div>
   </section>
 
   <section class="auth-card">
-    <div class="topbar">
-      <div>
-        <p class="eyebrow dark">Local dev</p>
-        <h2>Auth Playground</h2>
-      </div>
-      <div class="status-pill" [class.active]="loggedIn">
-        <span></span>
-        {{ loggedIn ? 'Logged in' : 'Guest' }}
-      </div>
-    </div>
-
     <div class="tabs">
-      <button type="button" [class.active]="activeTab === 'login'" (click)="switchTab('login')">
+      <button
+        type="button"
+        [class.active]="activeTab === 'login'"
+        (click)="switchTab('login')"
+      >
         Login
       </button>
-      <button type="button" [class.active]="activeTab === 'register'" (click)="switchTab('register')">
+
+      <button
+        type="button"
+        [class.active]="activeTab === 'register'"
+        (click)="switchTab('register')"
+      >
         Register
       </button>
     </div>
 
-    <form *ngIf="activeTab === 'login'" class="form" (ngSubmit)="login()">
+    <form
+      *ngIf="activeTab === 'login'"
+      class="form"
+      (ngSubmit)="login()"
+    >
       <label>
         Email
-        <input name="loginEmail" type="email" [(ngModel)]="loginForm.email" placeholder="ayoub@test.com" required />
+        <input
+          type="email"
+          name="loginEmail"
+          [(ngModel)]="loginForm.email"
+          placeholder="client@profood.ma"
+          required
+        />
       </label>
 
       <label>
         Password
-        <input name="loginPassword" type="password" [(ngModel)]="loginForm.password" placeholder="123456" required />
+        <input
+          type="password"
+          name="loginPassword"
+          [(ngModel)]="loginForm.password"
+          placeholder="******"
+          required
+        />
       </label>
 
-      <button class="primary-btn" type="submit" [disabled]="loading">
+      <button type="submit" [disabled]="loading">
         {{ loading ? 'Please wait...' : 'Login' }}
       </button>
     </form>
 
-    <form *ngIf="activeTab === 'register'" class="form" (ngSubmit)="register()">
+    <form
+      *ngIf="activeTab === 'register'"
+      class="form"
+      (ngSubmit)="register()"
+    >
       <label>
         Name
-        <input name="registerName" type="text" [(ngModel)]="registerForm.name" placeholder="Ayoub" required />
+        <input
+          type="text"
+          name="registerName"
+          [(ngModel)]="registerForm.name"
+          placeholder="Ayoub"
+          required
+        />
       </label>
 
       <label>
         Email
-        <input name="registerEmail" type="email" [(ngModel)]="registerForm.email" placeholder="ayoub2@test.com" required />
+        <input
+          type="email"
+          name="registerEmail"
+          [(ngModel)]="registerForm.email"
+          placeholder="ayoub@profood.ma"
+          required
+        />
       </label>
 
       <label>
         Password
-        <input name="registerPassword" type="password" [(ngModel)]="registerForm.password" placeholder="123456" required />
+        <input
+          type="password"
+          name="registerPassword"
+          [(ngModel)]="registerForm.password"
+          placeholder="Minimum 6 characters"
+          required
+        />
       </label>
 
-      <button class="primary-btn" type="submit" [disabled]="loading">
+      <label>
+        Role
+        <select
+          name="registerRole"
+          [(ngModel)]="registerForm.role"
+        >
+          <option value="CLIENT">CLIENT</option>
+          <option value="FOURNISSEUR">FOURNISSEUR</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="MODERATEUR">MODERATEUR</option>
+        </select>
+      </label>
+
+      <label>
+        Company name
+        <input
+          type="text"
+          name="companyName"
+          [(ngModel)]="registerForm.companyName"
+          placeholder="Restaurant Tanger Food"
+        />
+      </label>
+
+      <label>
+        Phone
+        <input
+          type="text"
+          name="phone"
+          [(ngModel)]="registerForm.phone"
+          placeholder="+212 6 00 00 00 00"
+        />
+      </label>
+
+      <button type="submit" [disabled]="loading">
         {{ loading ? 'Please wait...' : 'Create account' }}
       </button>
     </form>
+  </section>
 
-    <section class="session-panel">
-      <h3>Current session</h3>
+  <section class="session-card">
+    <h2>Current session</h2>
 
-      <div class="session-row">
+    <div class="session-grid">
+      <div>
+        <span>Status</span>
+        <strong>{{ loggedIn ? 'Logged in' : 'Guest' }}</strong>
+      </div>
+
+      <div>
         <span>User</span>
         <strong>{{ user ? user.name + ' (' + user.email + ')' : 'None' }}</strong>
       </div>
 
-      <div class="session-row">
+      <div>
         <span>Role</span>
         <strong>{{ user?.role || 'None' }}</strong>
       </div>
 
-      <div class="session-row token-row">
+      <div>
         <span>Token</span>
         <strong>{{ tokenPreview }}</strong>
       </div>
+    </div>
 
-      <div class="actions">
-        <button type="button" class="secondary-btn" (click)="getMe()" [disabled]="loading || !loggedIn">
-          Test /auth/me
-        </button>
-        <button type="button" class="danger-btn" (click)="logout()">
-          Logout
-        </button>
-      </div>
-    </section>
+    <div class="actions">
+      <button type="button" (click)="getMe()" [disabled]="loading">
+        Test /auth/me
+      </button>
 
-    <section class="result-box">
-      <div class="result-header">
-        <span>API Result</span>
-        <small>localhost:4000</small>
-      </div>
-      <pre>{{ result }}</pre>
-    </section>
+      <button type="button" class="danger" (click)="logout()">
+        Logout
+      </button>
+    </div>
+
+    <pre>{{ result }}</pre>
   </section>
 </main>
+
+<app-chatbot-widget></app-chatbot-widget>

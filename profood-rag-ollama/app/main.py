@@ -5,6 +5,10 @@ from fastapi.responses import FileResponse
 from fastapi import Depends
 from app.auth import get_current_user
 
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,7 +22,25 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+STATIC_DIR = PROJECT_ROOT / "static"
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/")
+def serve_frontend():
+    index_file = STATIC_DIR / "index.html"
+
+    if index_file.exists():
+        return FileResponse(index_file)
+
+    return {
+        "message": "Profood RAG API is running",
+        "docs": "/docs"
+    }
+
 
 
 @app.get("/")

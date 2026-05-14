@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Profood RAG Chatbot</title>
+
+  <style>
+    :root {
+      --green: #1f7a3f;
+      --green-dark: #123524;
+      --orange: #f59e0b;
+      --bg: #f4f7f2;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #17251d;
+      --muted: #6b7280;
+      --danger: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(31, 122, 63, 0.18), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.18), transparent 35%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 22px;
+      padding: 22px;
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--green-dark), #1d5d38);
+      color: white;
+      border-radius: 26px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 24px 60px rgba(18, 53, 36, 0.18);
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      background: white;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 22px;
+    }
+
+    .sidebar h1 {
+      margin: 0 0 12px;
+      font-size: 31px;
+      line-height: 1.1;
+    }
+
+    .sidebar p {
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.13);
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-size: 12px;
+    }
+
+    .main {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      border-radius: 26px;
+      box-shadow: 0 24px 60px rgba(18, 53, 36, 0.14);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      padding: 18px 22px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .status strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .status span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 13px;
+      padding: 11px 15px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn-light {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .chat {
+      flex: 1;
+      padding: 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 520px;
+      max-height: calc(100vh - 180px);
+    }
+
+    .welcome {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      max-width: 760px;
+    }
+
+    .welcome h2 {
+      margin: 0 0 8px;
+      font-size: 21px;
+    }
+
+    .welcome p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 15px;
+    }
+
+    .suggestions button {
+      background: #e9f7ef;
+      color: var(--green-dark);
+      border: 1px solid #d8eadf;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .row.user {
+      justify-content: flex-end;
+    }
+
+    .row.bot {
+      justify-content: flex-start;
+    }
+
+    .bubble {
+      max-width: min(760px, 86%);
+      padding: 14px 16px;
+      border-radius: 18px;
+      line-height: 1.65;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .bubble.user {
+      background: linear-gradient(135deg, var(--orange), #fbbf24);
+      color: #2b1700;
+      border-bottom-right-radius: 6px;
+    }
+
+    .bubble.bot {
+      background: white;
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 6px;
+    }
+
+    .sources {
+      margin-top: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+    }
+
+    .sources-title {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .source {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+
+    .source strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .source p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .input-area {
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 16px;
+    }
+
+    .token-box {
+      margin-bottom: 10px;
+    }
+
+    .token-box input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 11px 12px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .input-box {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 13px;
+      min-height: 48px;
+      max-height: 150px;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    textarea:focus,
+    .token-box input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(31, 122, 63, 0.12);
+    }
+
+    .send {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--green);
+      color: white;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .helper {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .chat {
+        min-height: 480px;
+      }
+
+      .bubble {
+        max-width: 94%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <aside class="sidebar">
+      <div>
+        <div class="logo">P</div>
+        <h1>Profood RAG Chatbot</h1>
+        <p>
+          Interface statique de test pour le service FastAPI RAG.
+          Elle permet de poser une question, recevoir une réponse et afficher les sources.
+        </p>
+
+        <div class="pill-list">
+          <span class="pill">FastAPI</span>
+          <span class="pill">RAG</span>
+          <span class="pill">Ollama</span>
+          <span class="pill">ChromaDB</span>
+          <span class="pill">Sources</span>
+        </div>
+      </div>
+
+      <p>
+        Avant de poser des questions, lance POST /ingest si les documents ne sont pas encore indexés.
+      </p>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div class="status">
+          <strong>Assistant Profood</strong>
+          <span>FastAPI RAG API · http://127.0.0.1:8000</span>
+        </div>
+
+        <div class="actions">
+          <button class="btn-light" onclick="runIngest()">Ingest</button>
+          <button class="btn-light" onclick="clearChat()">Clear</button>
+        </div>
+      </header>
+
+      <div id="chat" class="chat">
+        <div class="welcome">
+          <h2>Bienvenue 👋</h2>
+          <p>
+            Pose une question sur les produits, équipements, fournisseurs, articles ou documents Profood.
+          </p>
+
+          <div class="suggestions">
+            <button onclick="useSuggestion('What equipment do I need for olive oil production?')">
+              Olive oil equipment
+            </button>
+            <button onclick="useSuggestion('What packaging equipment is useful for food products?')">
+              Packaging equipment
+            </button>
+            <button onclick="useSuggestion('What does Profood know about suppliers?')">
+              Suppliers
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="input-area">
+        <div class="token-box">
+          <input
+            id="tokenInput"
+            type="text"
+            placeholder="Optional JWT token: paste Bearer token here if /ask is protected"
+          />
+        </div>
+
+        <div class="input-box">
+          <textarea
+            id="questionInput"
+            placeholder="Ask Profood AI..."
+            rows="1"
+            onkeydown="handleKey(event)"
+          ></textarea>
+
+          <button id="sendBtn" class="send" onclick="sendQuestion()">➜</button>
+        </div>
+
+        <div class="helper">
+          <span>Enter = send · Shift + Enter = new line</span>
+          <span>If auth is enabled, paste JWT token above.</span>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const questionInput = document.getElementById("questionInput");
+    const tokenInput = document.getElementById("tokenInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function handleKey(event) {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion();
+      }
+    }
+
+    function useSuggestion(text) {
+      questionInput.value = text;
+      questionInput.focus();
+    }
+
+    function scrollBottom() {
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addMessage(text, sender, sources = []) {
+      const row = document.createElement("div");
+      row.className = `row ${sender}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${sender}`;
+
+      const content = document.createElement("div");
+      content.textContent = text;
+      bubble.appendChild(content);
+
+      if (sender === "bot" && sources.length > 0) {
+        const sourcesBox = document.createElement("div");
+        sourcesBox.className = "sources";
+
+        const title = document.createElement("div");
+        title.className = "sources-title";
+        title.textContent = "Sources utilisées";
+        sourcesBox.appendChild(title);
+
+        sources.slice(0, 4).forEach((source, index) => {
+          const item = document.createElement("div");
+          item.className = "source";
+
+          const sourceName = source.source || "unknown";
+          const page = source.page !== null && source.page !== undefined ? ` · page ${source.page}` : "";
+          const docType = source.doc_type ? ` · ${source.doc_type}` : "";
+
+          item.innerHTML = `
+            <strong>${index + 1}. ${sourceName}${page}${docType}</strong>
+            <p>${source.preview || ""}</p>
+          `;
+
+          sourcesBox.appendChild(item);
+        });
+
+        bubble.appendChild(sourcesBox);
+      }
+
+      row.appendChild(bubble);
+      chat.appendChild(row);
+      scrollBottom();
+      return row;
+    }
+
+    function getHeaders() {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+
+      const token = tokenInput.value.trim();
+
+      if (token) {
+        headers["Authorization"] = token.startsWith("Bearer ")
+          ? token
+          : `Bearer ${token}`;
+      }
+
+      return headers;
+    }
+
+    async function sendQuestion() {
+      const question = questionInput.value.trim();
+
+      if (!question) return;
+
+      addMessage(question, "user");
+      questionInput.value = "";
+
+      sendBtn.disabled = true;
+      const loadingRow = addMessage("Thinking...", "bot");
+
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: getHeaders(),
+          body: JSON.stringify({
+            question,
+            k: 4
+          })
+        });
+
+        const data = await response.json();
+
+        loadingRow.remove();
+
+        if (!response.ok) {
+          addMessage(`Error ${response.status}: ${JSON.stringify(data, null, 2)}`, "bot");
+          return;
+        }
+
+        addMessage(data.answer || "No answer received.", "bot", data.sources || []);
+      } catch (error) {
+        loadingRow.remove();
+        addMessage("Cannot connect to FastAPI RAG API. Check server logs.", "bot");
+        console.error(error);
+      } finally {
+        sendBtn.disabled = false;
+        questionInput.focus();
+      }
+    }
+
+    async function runIngest() {
+      addMessage("Starting ingestion...", "bot");
+
+      try {
+        const response = await fetch("/ingest?reset=true", {
+          method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          addMessage(`Ingest error ${response.status}: ${JSON.stringify(data, null, 2)}`, "bot");
+          return;
+        }
+
+        addMessage(
+          `Ingestion completed ✅\n\nLoaded documents: ${data.loaded_documents}\nCreated chunks: ${data.created_chunks}\nCollection: ${data.collection_name}`,
+          "bot"
+        );
+      } catch (error) {
+        addMessage("Ingestion failed. Check FastAPI logs.", "bot");
+        console.error(error);
+      }
+    }
+
+    function clearChat() {
+      chat.innerHTML = `
+        <div class="welcome">
+          <h2>Bienvenue 👋</h2>
+          <p>
+            Pose une question sur les produits, équipements, fournisseurs, articles ou documents Profood.
+          </p>
+
+          <div class="suggestions">
+            <button onclick="useSuggestion('What equipment do I need for olive oil production?')">
+              Olive oil equipment
+            </button>
+            <button onclick="useSuggestion('What packaging equipment is useful for food products?')">
+              Packaging equipment
+            </button>
+            <button onclick="useSuggestion('What does Profood know about suppliers?')">
+              Suppliers
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
