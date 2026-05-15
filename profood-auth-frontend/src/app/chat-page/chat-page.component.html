@@ -1,0 +1,51 @@
+<main class="dashboard" *ngIf="isAuthorized">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">ProFood workspace</p>
+      <h1>Assistant RAG</h1>
+    </div>
+
+    <button type="button" (click)="logout()">Logout</button>
+  </header>
+
+  <section class="welcome">
+    <div>
+      <h2>Welcome{{ user?.name ? ', ' + user?.name : '' }}</h2>
+      <p>
+        Your ProFood assistant is available from the floating button in the
+        bottom-right corner. Chat sessions are saved for your account only.
+      </p>
+    </div>
+
+    <dl>
+      <div>
+        <dt>Email</dt>
+        <dd>{{ user?.email || 'Unknown' }}</dd>
+      </div>
+
+      <div>
+        <dt>Role</dt>
+        <dd>{{ user?.role || 'Unknown' }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="status-grid">
+    <article>
+      <span>RAG service</span>
+      <strong>FastAPI :8000</strong>
+    </article>
+
+    <article>
+      <span>History</span>
+      <strong>MongoDB sessions</strong>
+    </article>
+
+    <article>
+      <span>Privacy</span>
+      <strong>JWT user scoped</strong>
+    </article>
+  </section>
+
+  <app-chatbot-widget></app-chatbot-widget>
+</main>

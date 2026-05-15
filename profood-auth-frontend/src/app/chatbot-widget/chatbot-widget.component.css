@@ -1,0 +1,254 @@
+.chat-toggle {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #064e3b, #22c55e, #f59e0b);
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28);
+  z-index: 50;
+}
+
+.chat-window {
+  position: fixed;
+  right: 24px;
+  bottom: 102px;
+  width: min(720px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 132px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.3);
+  z-index: 50;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: #064e3b;
+  color: white;
+}
+
+.chat-header h3,
+.chat-header p,
+.session-status,
+.sources p {
+  margin: 0;
+}
+
+.chat-header h3 {
+  font-size: 17px;
+}
+
+.chat-header p {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  cursor: pointer;
+}
+
+.chat-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  min-height: 0;
+}
+
+.sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+  border-right: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.new-session,
+.delete-session,
+.session-item,
+.chat-input button {
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.new-session {
+  min-height: 38px;
+  background: #15803d;
+  color: white;
+}
+
+.delete-session {
+  min-height: 36px;
+  margin-top: auto;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.delete-session:disabled,
+.new-session:disabled,
+.chat-input button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.session-item {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  text-align: left;
+  background: white;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+}
+
+.session-item.active {
+  border-color: #22c55e;
+  background: #ecfdf5;
+}
+
+.session-item strong,
+.session-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-item span,
+.session-status {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.message-wrapper {
+  margin-bottom: 14px;
+}
+
+.user-wrapper {
+  text-align: right;
+}
+
+.message {
+  display: inline-block;
+  max-width: 86%;
+  padding: 11px 13px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.message.assistant {
+  background: white;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+}
+
+.message.user {
+  background: #15803d;
+  color: white;
+}
+
+.sources {
+  max-width: 86%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 12px;
+  border: 1px solid #bbf7d0;
+}
+
+.sources ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+.typing {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.chat-input input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 12px 14px;
+  outline: none;
+}
+
+.chat-input input:focus {
+  border-color: #15803d;
+  box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.12);
+}
+
+.chat-input button {
+  padding: 0 16px;
+  background: #f59e0b;
+  color: white;
+}
+
+@media (max-width: 620px) {
+  .chat-window {
+    right: 12px;
+    bottom: 92px;
+    width: calc(100vw - 24px);
+  }
+
+  .chat-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sessions {
+    max-height: 154px;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+}

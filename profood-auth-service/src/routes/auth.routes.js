@@ -13,6 +13,7 @@ function createToken(user) {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
+      name: user.name,
     },
     process.env.JWT_SECRET,
     {
@@ -21,9 +22,28 @@ function createToken(user) {
   );
 }
 
+function formatUser(user) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    companyName: user.companyName,
+    phone: user.phone,
+    isActive: user.isActive,
+  };
+}
+
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const {
+      name,
+      email,
+      password,
+      role,
+      companyName,
+      phone,
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -53,6 +73,9 @@ router.post("/register", async (req, res) => {
       name,
       email,
       passwordHash,
+      role: role || "CLIENT",
+      companyName: companyName || "",
+      phone: phone || "",
     });
 
     const token = createToken(user);
@@ -60,12 +83,7 @@ router.post("/register", async (req, res) => {
     return res.status(201).json({
       message: "User registered successfully",
       access_token: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: formatUser(user),
     });
   } catch (error) {
     console.error(error);
@@ -96,6 +114,12 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: "This account is disabled",
+      });
+    }
+
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.passwordHash
@@ -112,12 +136,7 @@ router.post("/login", async (req, res) => {
     return res.json({
       message: "Login successful",
       access_token: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: formatUser(user),
     });
   } catch (error) {
     console.error(error);
@@ -130,12 +149,7 @@ router.post("/login", async (req, res) => {
 
 router.get("/me", authMiddleware, async (req, res) => {
   return res.json({
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-    },
+    user: formatUser(req.user),
   });
 });
 

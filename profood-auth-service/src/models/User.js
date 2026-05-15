@@ -24,8 +24,25 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: ["CLIENT", "FOURNISSEUR", "ADMIN", "MODERATEUR"],
+      default: "CLIENT",
+    },
+
+    companyName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    phone: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {
