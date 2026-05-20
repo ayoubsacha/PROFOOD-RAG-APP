@@ -4,17 +4,22 @@
   (click)="toggleChat()"
   aria-label="Open ProFood assistant"
 >
-  <span>AI</span>
+  <span class="toggle-mark">PF</span>
+  <span class="toggle-pulse"></span>
 </button>
 
 <div class="chat-window" *ngIf="isOpen">
   <div class="chat-header">
-    <div>
-      <h3>ProFood Assistant</h3>
-      <p>{{ currentSessionTitle }}</p>
+    <div class="assistant-identity">
+      <div class="assistant-mark">AI</div>
+
+      <div>
+        <h3>ProFood Assistant</h3>
+        <p>{{ currentSessionTitle }}</p>
+      </div>
     </div>
 
-    <button class="icon-btn" type="button" (click)="toggleChat()" aria-label="Close chat">
+    <button class="header-action" type="button" (click)="toggleChat()" aria-label="Close chat">
       x
     </button>
   </div>
@@ -22,6 +27,7 @@
   <div class="chat-shell">
     <aside class="sessions">
       <button class="new-session" type="button" (click)="startNewSession()" [disabled]="sessionsLoading">
+        <span>+</span>
         New chat
       </button>
 
@@ -50,6 +56,31 @@
     </aside>
 
     <section class="chat-panel">
+      <div class="voice-stage" *ngIf="isVoiceActive">
+        <div
+          class="wave-visual"
+          [class.listening]="recordingMode === 'voice-chat'"
+          [class.thinking]="voiceChatLoading"
+          [class.speaking]="assistantSpeaking"
+          aria-hidden="true"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+        <div class="voice-stage-copy">
+          <strong>{{ voiceStateLabel }}</strong>
+          <span>Mode vocal continu</span>
+        </div>
+
+        <button class="stop-voice" type="button" (click)="stopVoiceConversation()">
+          Stop
+        </button>
+      </div>
+
       <div class="chat-body">
         <div
           *ngFor="let message of messages"
@@ -78,22 +109,61 @@
           </div>
         </div>
 
-        <div class="typing" *ngIf="loading">
+        <div class="typing" *ngIf="loading && !voiceChatLoading">
           ProFood AI reflechit...
         </div>
       </div>
 
       <form class="chat-input" (ngSubmit)="sendMessage()">
+        <button
+          class="icon-control dictate-control"
+          type="button"
+          (click)="toggleDictation()"
+          [class.recording]="recordingMode === 'dictate'"
+          [disabled]="(isBusy && recordingMode !== 'dictate') || voiceConversationActive || assistantSpeaking || (recordingMode !== null && recordingMode !== 'dictate')"
+          title="Dictate: convert speech to text only"
+          aria-label="Dictate voice to text"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"></path>
+            <path d="M19 11a7 7 0 0 1-14 0"></path>
+            <path d="M12 18v4"></path>
+            <path d="M8 22h8"></path>
+          </svg>
+        </button>
+
         <input
           type="text"
           name="question"
           [(ngModel)]="question"
           placeholder="Posez votre question..."
           autocomplete="off"
+          [disabled]="voiceConversationActive || recordingMode === 'voice-chat'"
         />
 
-        <button type="submit" [disabled]="loading || !question.trim()">
-          Send
+        <button
+          class="icon-control voice-control"
+          type="button"
+          (click)="toggleVoiceChat()"
+          [class.active]="voiceConversationActive || recordingMode === 'voice-chat' || voiceChatLoading || assistantSpeaking"
+          [disabled]="dictationLoading || recordingMode === 'dictate' || (isBusy && !isVoiceActive)"
+          [attr.aria-label]="voiceConversationActive || recordingMode === 'voice-chat' || voiceChatLoading || assistantSpeaking ? 'Stop voice chat' : 'Start voice chat'"
+          title="Voice chat"
+        >
+          <span class="mini-waves" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+
+          <span class="stop-square" *ngIf="voiceConversationActive || recordingMode === 'voice-chat' || voiceChatLoading || assistantSpeaking"></span>
+        </button>
+
+        <button class="send-button" type="submit" [disabled]="isBusy || recordingMode !== null || voiceConversationActive || !question.trim()" aria-label="Send message">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 2 11 13"></path>
+            <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>
+          </svg>
         </button>
       </form>
     </section>
