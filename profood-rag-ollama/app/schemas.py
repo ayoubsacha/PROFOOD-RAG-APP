@@ -28,6 +28,18 @@ class AskResponse(BaseModel):
     session_id: str
 
 
+class VoiceTranscribeResponse(BaseModel):
+    transcript: str
+
+
+class VoiceAskResponse(BaseModel):
+    transcript: str
+    answer: str
+    sources: list[SourceChunk]
+    session_id: str | None = None
+    audio_url: str | None = None
+
+
 class IngestResponse(BaseModel):
     message: str
     loaded_documents: int

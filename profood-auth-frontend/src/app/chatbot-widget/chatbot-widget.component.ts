@@ -8,7 +8,9 @@ import {
   ChatSession,
   ChatSessionSummary,
   ChatbotService,
-  SourceChunk
+  SourceChunk,
+  VoiceAskResponse,
+  VoiceTranscribeResponse
 } from '../chatbot.service';
 
 interface ChatMessage {
@@ -16,6 +18,8 @@ interface ChatMessage {
   text: string;
   sources?: SourceChunk[];
 }
+
+type VoiceRecordingMode = 'dictate' | 'voice-chat';
 
 const WELCOME_MESSAGE: ChatMessage = {
   role: 'assistant',
@@ -32,13 +36,36 @@ const WELCOME_MESSAGE: ChatMessage = {
 export class ChatbotWidgetComponent implements OnInit {
   isOpen = false;
   loading = false;
+  dictationLoading = false;
+  voiceChatLoading = false;
   sessionsLoading = false;
   question = '';
   statusMessage = '';
+  recordingMode: VoiceRecordingMode | null = null;
+  voiceConversationActive = false;
+  assistantSpeaking = false;
 
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
   messages: ChatMessage[] = [{ ...WELCOME_MESSAGE }];
+  private readonly silenceThreshold = 0.03;
+  private readonly silenceDelayMs = 900;
+  private readonly maxIdleRecordingMs = 5000;
+  private readonly maxVoiceChatRecordingMs = 20000;
+  private readonly maxDictationRecordingMs = 45000;
+  private audioStream: MediaStream | null = null;
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioContext: AudioContext | null = null;
+  private audioSource: MediaStreamAudioSourceNode | null = null;
+  private assistantAudio: HTMLAudioElement | null = null;
+  private voiceRestartTimerId: number | null = null;
+  private silenceFrameId: number | null = null;
+  private speechDetected = false;
+  private silenceStartedAt: number | null = null;
+  private recordingStartedAt = 0;
+  private shouldProcessRecording = true;
+  private voiceLoopId = 0;
+  private recordedChunks: Blob[] = [];
 
   constructor(
     private readonly authService: AuthService,
@@ -54,8 +81,33 @@ export class ChatbotWidgetComponent implements OnInit {
     return session?.title || 'New conversation';
   }
 
+  get isBusy(): boolean {
+    return this.loading || this.dictationLoading || this.voiceChatLoading;
+  }
+
+  get isVoiceActive(): boolean {
+    return this.voiceConversationActive || this.recordingMode === 'voice-chat' || this.voiceChatLoading || this.assistantSpeaking;
+  }
+
+  get voiceStateLabel(): string {
+    if (this.recordingMode === 'voice-chat') return 'A l ecoute';
+    if (this.voiceChatLoading) return 'Traitement';
+    if (this.assistantSpeaking) return 'Reponse vocale';
+    if (this.voiceConversationActive) return 'Pret';
+
+    return 'Mode vocal';
+  }
+
   toggleChat(): void {
     this.isOpen = !this.isOpen;
+
+    if (!this.isOpen) {
+      this.stopVoiceConversation();
+
+      if (this.recordingMode === 'dictate') {
+        this.stopRecording(false);
+      }
+    }
 
     if (this.isOpen) {
       this.loadSessions();
@@ -65,6 +117,7 @@ export class ChatbotWidgetComponent implements OnInit {
   startNewSession(): void {
     if (this.loading || this.sessionsLoading) return;
 
+    this.stopVoiceConversation();
     this.sessionsLoading = true;
 
     this.chatbotService.createSession('New chat').subscribe({
@@ -82,6 +135,7 @@ export class ChatbotWidgetComponent implements OnInit {
   selectSession(sessionId: string): void {
     if (this.currentSessionId === sessionId || this.sessionsLoading) return;
 
+    this.stopVoiceConversation();
     this.sessionsLoading = true;
 
     this.chatbotService.getSession(sessionId).subscribe({
@@ -94,6 +148,7 @@ export class ChatbotWidgetComponent implements OnInit {
   deleteCurrentSession(): void {
     if (!this.currentSessionId || this.sessionsLoading) return;
 
+    this.stopVoiceConversation();
     const sessionId = this.currentSessionId;
     this.sessionsLoading = true;
 
@@ -112,7 +167,7 @@ export class ChatbotWidgetComponent implements OnInit {
   sendMessage(): void {
     const cleanQuestion = this.question.trim();
 
-    if (!cleanQuestion || this.loading) return;
+    if (!cleanQuestion || this.isBusy || this.recordingMode || this.voiceConversationActive) return;
 
     if (!this.authService.getToken()) {
       this.messages.push({
@@ -158,6 +213,41 @@ export class ChatbotWidgetComponent implements OnInit {
     });
   }
 
+  toggleDictation(): void {
+    if (this.recordingMode === 'dictate') {
+      this.stopRecording(true);
+      return;
+    }
+
+    this.startRecording('dictate');
+  }
+
+  toggleVoiceChat(): void {
+    if (this.voiceConversationActive || this.recordingMode === 'voice-chat' || this.voiceChatLoading || this.assistantSpeaking) {
+      this.stopVoiceConversation();
+      return;
+    }
+
+    this.startVoiceConversation();
+  }
+
+  stopVoiceConversation(): void {
+    if (!this.voiceConversationActive && this.recordingMode !== 'voice-chat' && !this.voiceChatLoading && !this.assistantSpeaking) {
+      return;
+    }
+
+    this.voiceConversationActive = false;
+    this.voiceLoopId += 1;
+    this.clearVoiceRestartTimer();
+    this.stopAssistantAudio();
+
+    if (this.recordingMode === 'voice-chat') {
+      this.stopRecording(false);
+    }
+
+    this.statusMessage = this.voiceChatLoading ? 'Arret du mode vocal...' : '';
+  }
+
   private loadSessions(): void {
     if (!this.authService.getToken()) return;
 
@@ -188,5 +278,368 @@ export class ChatbotWidgetComponent implements OnInit {
   private handleSessionError(error: unknown): void {
     console.error(error);
     this.statusMessage = 'Unable to load chat sessions.';
+  }
+
+  private startVoiceConversation(): void {
+    if (this.isBusy || this.recordingMode) return;
+
+    this.voiceConversationActive = true;
+    this.voiceLoopId += 1;
+    this.statusMessage = 'Mode vocal actif.';
+    this.startRecording('voice-chat');
+  }
+
+  private async startRecording(mode: VoiceRecordingMode): Promise<void> {
+    if (this.recordingMode) return;
+    if (mode === 'dictate' && (this.isBusy || this.voiceConversationActive)) return;
+    if (mode === 'voice-chat' && (this.loading || this.voiceChatLoading || this.dictationLoading)) return;
+
+    const token = this.authService.getToken();
+
+    if (!token) {
+      if (mode === 'voice-chat') {
+        this.voiceConversationActive = false;
+      }
+
+      this.messages.push({
+        role: 'assistant',
+        text: 'Vous devez vous connecter pour utiliser le chatbot ProFood.'
+      });
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      if (mode === 'voice-chat') {
+        this.voiceConversationActive = false;
+      }
+
+      this.statusMessage = 'Voice recording is not supported in this browser.';
+      return;
+    }
+
+    try {
+      this.stopAssistantAudio();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      const mimeType = this.getSupportedAudioMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      this.audioStream = stream;
+      this.mediaRecorder = recorder;
+      this.recordedChunks = [];
+      this.recordingMode = mode;
+      this.recordingStartedAt = performance.now();
+      this.speechDetected = false;
+      this.silenceStartedAt = null;
+      this.shouldProcessRecording = true;
+      this.statusMessage = mode === 'dictate'
+        ? 'Dictee en cours...'
+        : 'Je vous ecoute...';
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          this.recordedChunks.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        this.statusMessage = 'Recording failed. Please try again.';
+        if (mode === 'voice-chat') {
+          this.voiceConversationActive = false;
+        }
+
+        this.cleanupRecording();
+      };
+
+      recorder.onstop = () => {
+        const chunks = [...this.recordedChunks];
+        const recordingMimeType = recorder.mimeType || mimeType || 'audio/webm';
+        const shouldProcess = this.shouldProcessRecording;
+
+        this.cleanupRecording();
+
+        if (!shouldProcess) {
+          if (mode === 'voice-chat' && this.voiceConversationActive) {
+            this.scheduleNextVoiceListening(250);
+          }
+
+          return;
+        }
+
+        this.handleRecordedAudio(mode, chunks, recordingMimeType);
+      };
+
+      recorder.start();
+      this.startSilenceDetection(stream, mode);
+    } catch (error) {
+      console.error(error);
+      if (mode === 'voice-chat') {
+        this.voiceConversationActive = false;
+      }
+
+      this.cleanupRecording();
+      this.statusMessage = 'Microphone permission was denied or unavailable.';
+    }
+  }
+
+  private stopRecording(processAudio = true): void {
+    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') return;
+
+    this.shouldProcessRecording = processAudio;
+    this.mediaRecorder.stop();
+    this.statusMessage = processAudio ? 'Traitement audio...' : '';
+  }
+
+  private handleRecordedAudio(mode: VoiceRecordingMode, chunks: Blob[], mimeType: string): void {
+    const token = this.authService.getToken();
+
+    if (!token) {
+      this.statusMessage = '';
+      return;
+    }
+
+    if (!chunks.length) {
+      this.statusMessage = 'No audio was captured.';
+      return;
+    }
+
+    const audioBlob = new Blob(chunks, { type: mimeType });
+
+    if (mode === 'dictate') {
+      this.transcribeDictation(audioBlob, token);
+      return;
+    }
+
+    if (!this.voiceConversationActive) return;
+
+    this.askWithVoice(audioBlob, token);
+  }
+
+  private transcribeDictation(audioBlob: Blob, token: string): void {
+    this.dictationLoading = true;
+    this.statusMessage = 'Transcribing voice input...';
+
+    this.chatbotService.transcribeVoice(audioBlob, token).subscribe({
+      next: (response: VoiceTranscribeResponse) => {
+        this.question = response.transcript || '';
+        this.statusMessage = response.transcript
+          ? 'Transcript ready. Review it, then send when ready.'
+          : 'No speech was detected.';
+      },
+      error: (error: unknown) => {
+        console.error(error);
+        this.statusMessage = 'Voice transcription failed.';
+      },
+      complete: () => {
+        this.dictationLoading = false;
+      }
+    });
+  }
+
+  private askWithVoice(audioBlob: Blob, token: string): void {
+    const activeVoiceLoopId = this.voiceLoopId;
+
+    this.loading = true;
+    this.voiceChatLoading = true;
+    this.statusMessage = 'Preparation de la reponse...';
+
+    this.chatbotService.askVoice(audioBlob, token, this.currentSessionId).subscribe({
+      next: (response: VoiceAskResponse) => {
+        const shouldContinueVoice = this.voiceConversationActive && activeVoiceLoopId === this.voiceLoopId;
+
+        this.currentSessionId = response.session_id || this.currentSessionId;
+
+        this.messages.push({
+          role: 'user',
+          text: response.transcript
+        });
+
+        this.messages.push({
+          role: 'assistant',
+          text: response.answer,
+          sources: response.sources || []
+        });
+
+        if (shouldContinueVoice) {
+          this.playAssistantAudio(response.audio_url, () => this.scheduleNextVoiceListening(350));
+        }
+
+        this.loadSessions();
+        this.statusMessage = shouldContinueVoice ? 'Reponse vocale...' : '';
+      },
+      error: (error: unknown) => {
+        console.error(error);
+        this.voiceConversationActive = false;
+
+        this.messages.push({
+          role: 'assistant',
+          text: 'Desole, une erreur est survenue pendant le chat vocal. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
+        });
+      },
+      complete: () => {
+        this.loading = false;
+        this.voiceChatLoading = false;
+      }
+    });
+  }
+
+  private playAssistantAudio(audioUrl?: string | null, onDone?: () => void): void {
+    const absoluteAudioUrl = this.chatbotService.getAbsoluteAudioUrl(audioUrl);
+
+    if (!absoluteAudioUrl) {
+      onDone?.();
+      return;
+    }
+
+    const audio = new Audio(absoluteAudioUrl);
+    this.assistantAudio = audio;
+    this.assistantSpeaking = true;
+    this.statusMessage = 'Reponse vocale...';
+
+    audio.onended = () => {
+      this.assistantSpeaking = false;
+      this.assistantAudio = null;
+      onDone?.();
+    };
+
+    audio.onerror = () => {
+      this.assistantSpeaking = false;
+      this.assistantAudio = null;
+      onDone?.();
+    };
+
+    audio.play().catch((error: unknown) => {
+      console.error(error);
+      this.assistantSpeaking = false;
+      this.assistantAudio = null;
+      this.statusMessage = 'The voice answer is ready, but playback was blocked by the browser.';
+      onDone?.();
+    });
+  }
+
+  private cleanupRecording(): void {
+    if (this.silenceFrameId !== null) {
+      window.cancelAnimationFrame(this.silenceFrameId);
+    }
+
+    void this.audioContext?.close();
+    this.audioStream?.getTracks().forEach((track) => track.stop());
+    this.audioContext = null;
+    this.audioSource = null;
+    this.audioStream = null;
+    this.mediaRecorder = null;
+    this.recordedChunks = [];
+    this.recordingMode = null;
+    this.silenceFrameId = null;
+    this.speechDetected = false;
+    this.silenceStartedAt = null;
+    this.recordingStartedAt = 0;
+    this.shouldProcessRecording = true;
+  }
+
+  private stopAssistantAudio(): void {
+    if (!this.assistantAudio) return;
+
+    this.assistantAudio.onended = null;
+    this.assistantAudio.onerror = null;
+    this.assistantAudio.pause();
+    this.assistantAudio.currentTime = 0;
+    this.assistantAudio = null;
+    this.assistantSpeaking = false;
+  }
+
+  private clearVoiceRestartTimer(): void {
+    if (this.voiceRestartTimerId === null) return;
+
+    window.clearTimeout(this.voiceRestartTimerId);
+    this.voiceRestartTimerId = null;
+  }
+
+  private scheduleNextVoiceListening(delayMs: number): void {
+    this.clearVoiceRestartTimer();
+
+    if (!this.voiceConversationActive) return;
+
+    this.statusMessage = 'Mode vocal actif.';
+    this.voiceRestartTimerId = window.setTimeout(() => {
+      this.voiceRestartTimerId = null;
+
+      if (!this.voiceConversationActive || this.isBusy || this.recordingMode || this.assistantSpeaking) return;
+
+      this.startRecording('voice-chat');
+    }, delayMs);
+  }
+
+  private startSilenceDetection(stream: MediaStream, mode: VoiceRecordingMode): void {
+    if (typeof window.AudioContext === 'undefined') return;
+
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    const samples = new Float32Array(analyser.fftSize);
+    const maxRecordingMs = mode === 'voice-chat'
+      ? this.maxVoiceChatRecordingMs
+      : this.maxDictationRecordingMs;
+
+    analyser.fftSize = 2048;
+    this.audioContext = audioContext;
+    this.audioSource = audioContext.createMediaStreamSource(stream);
+    this.audioSource.connect(analyser);
+
+    const checkSilence = () => {
+      if (!this.mediaRecorder || this.mediaRecorder.state !== 'recording') return;
+
+      analyser.getFloatTimeDomainData(samples);
+
+      let sum = 0;
+      for (const sample of samples) {
+        sum += sample * sample;
+      }
+
+      const rms = Math.sqrt(sum / samples.length);
+      const now = performance.now();
+
+      if (rms > this.silenceThreshold) {
+        this.speechDetected = true;
+        this.silenceStartedAt = null;
+      } else if (this.speechDetected) {
+        this.silenceStartedAt ??= now;
+
+        if (now - this.silenceStartedAt >= this.silenceDelayMs) {
+          this.stopRecording();
+          return;
+        }
+      } else if (now - this.recordingStartedAt >= this.maxIdleRecordingMs) {
+        this.stopRecording(false);
+        return;
+      }
+
+      if (now - this.recordingStartedAt >= maxRecordingMs) {
+        this.stopRecording(this.speechDetected);
+        return;
+      }
+
+      this.silenceFrameId = window.requestAnimationFrame(checkSilence);
+    };
+
+    this.silenceFrameId = window.requestAnimationFrame(checkSilence);
+  }
+
+  private getSupportedAudioMimeType(): string {
+    const mimeTypes = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4'
+    ];
+
+    return mimeTypes.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || '';
   }
 }

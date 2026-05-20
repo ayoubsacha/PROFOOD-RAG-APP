@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
     top_k: int = 4
 
+    # Voice
+    whisper_model_size: str = "base"
+    audio_upload_dir: str = "./data/audio"
+    tts_output_dir: str = "./data/tts"
+    tts_voice: str = "fr-FR-HenriNeural"
+
     # JWT
     jwt_secret: str = ""
     jwt_expires_in: str = "7d"

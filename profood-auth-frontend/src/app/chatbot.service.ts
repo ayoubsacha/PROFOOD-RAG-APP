@@ -18,6 +18,18 @@ export interface AskResponse {
   session_id: string;
 }
 
+export interface VoiceTranscribeResponse {
+  transcript: string;
+}
+
+export interface VoiceAskResponse {
+  transcript: string;
+  answer: string;
+  sources: SourceChunk[];
+  session_id?: string | null;
+  audio_url?: string | null;
+}
+
 export interface ChatSessionMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -63,6 +75,40 @@ export class ChatbotService {
     );
   }
 
+  transcribeVoice(audioBlob: Blob, token: string): Observable<VoiceTranscribeResponse> {
+    const formData = this.createAudioFormData(audioBlob);
+
+    return this.http.post<VoiceTranscribeResponse>(
+      `${this.ragApiUrl}/voice/transcribe`,
+      formData,
+      { headers: this.getTokenHeaders(token) }
+    );
+  }
+
+  askVoice(audioBlob: Blob, token: string, sessionId?: string | null): Observable<VoiceAskResponse> {
+    const formData = this.createAudioFormData(audioBlob);
+
+    if (sessionId) {
+      formData.append('session_id', sessionId);
+    }
+
+    return this.http.post<VoiceAskResponse>(
+      `${this.ragApiUrl}/voice/ask`,
+      formData,
+      { headers: this.getTokenHeaders(token) }
+    );
+  }
+
+  getAbsoluteAudioUrl(audioUrl?: string | null): string | null {
+    if (!audioUrl) return null;
+
+    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://')) {
+      return audioUrl;
+    }
+
+    return `${this.ragApiUrl}${audioUrl}`;
+  }
+
   createSession(title?: string): Observable<ChatSession> {
     return this.http.post<ChatSession>(
       `${this.ragApiUrl}/chat/sessions`,
@@ -98,5 +144,27 @@ export class ChatbotService {
     return token
       ? new HttpHeaders({ Authorization: `Bearer ${token}` })
       : new HttpHeaders();
+  }
+
+  private getTokenHeaders(token: string): HttpHeaders {
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
+  private createAudioFormData(audioBlob: Blob): FormData {
+    const formData = new FormData();
+    const extension = this.getAudioExtension(audioBlob.type);
+
+    formData.append('file', audioBlob, `voice-question.${extension}`);
+
+    return formData;
+  }
+
+  private getAudioExtension(contentType: string): string {
+    if (contentType.includes('ogg')) return 'ogg';
+    if (contentType.includes('mp4')) return 'mp4';
+    if (contentType.includes('mpeg') || contentType.includes('mp3')) return 'mp3';
+    if (contentType.includes('wav')) return 'wav';
+
+    return 'webm';
   }
 }
