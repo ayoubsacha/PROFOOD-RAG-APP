@@ -1,10 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../auth.service';
 import {
-  AskResponse,
   ChatSession,
   ChatSessionSummary,
   ChatbotService,
@@ -42,15 +41,17 @@ export class ChatbotWidgetComponent implements OnInit {
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
   messages: ChatMessage[] = [];
-  private readonly silenceThreshold = 0.03;
-  private readonly silenceDelayMs = 900;
-  private readonly maxIdleRecordingMs = 5000;
-  private readonly maxRecordingMs = 15000;
+  private readonly silenceThreshold = 0.04;
+  private readonly silenceDelayMs = 550;
+  private readonly maxIdleRecordingMs = 2500;
+  private readonly maxRecordingMs = 10000;
   private audioStream: MediaStream | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private audioContext: AudioContext | null = null;
   private audioSource: MediaStreamAudioSourceNode | null = null;
   private assistantAudio: HTMLAudioElement | null = null;
+  private streamAbortController: AbortController | null = null;
+  private textStreamAbortController: AbortController | null = null;
   private voiceRestartTimerId: number | null = null;
   private silenceFrameId: number | null = null;
   private speechDetected = false;
@@ -59,10 +60,15 @@ export class ChatbotWidgetComponent implements OnInit {
   private shouldProcessRecording = true;
   private voiceLoopId = 0;
   private recordedChunks: Blob[] = [];
+  private audioQueue: string[] = [];
+  private pendingSpeechText = '';
+  private pendingTtsRequests = 0;
+  private voiceStreamCompleted = false;
 
   constructor(
     private readonly authService: AuthService,
-    private readonly chatbotService: ChatbotService
+    private readonly chatbotService: ChatbotService,
+    private readonly changeDetector: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -110,6 +116,7 @@ export class ChatbotWidgetComponent implements OnInit {
     this.isOpen = !this.isOpen;
 
     if (!this.isOpen) {
+      this.abortTextStream();
       this.stopVoiceConversation();
 
       if (this.recordingMode === 'dictate') {
@@ -125,6 +132,7 @@ export class ChatbotWidgetComponent implements OnInit {
   startNewSession(): void {
     if (this.loading || this.sessionsLoading) return;
 
+    this.abortTextStream();
     this.stopVoiceConversation();
     this.sessionsLoading = true;
 
@@ -143,6 +151,7 @@ export class ChatbotWidgetComponent implements OnInit {
   selectSession(sessionId: string): void {
     if (this.currentSessionId === sessionId || this.sessionsLoading) return;
 
+    this.abortTextStream();
     this.stopVoiceConversation();
     this.sessionsLoading = true;
 
@@ -156,6 +165,7 @@ export class ChatbotWidgetComponent implements OnInit {
   deleteCurrentSession(): void {
     if (!this.currentSessionId || this.sessionsLoading) return;
 
+    this.abortTextStream();
     this.stopVoiceConversation();
     const sessionId = this.currentSessionId;
     this.sessionsLoading = true;
@@ -195,30 +205,66 @@ export class ChatbotWidgetComponent implements OnInit {
     this.loading = true;
     this.statusMessage = '';
 
-    this.chatbotService.ask(cleanQuestion, this.currentSessionId).subscribe({
-      next: (response: AskResponse) => {
-        this.currentSessionId = response.session_id;
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      text: '',
+      sources: []
+    };
+    const abortController = new AbortController();
 
-        this.messages.push({
-          role: 'assistant',
-          text: response.answer,
-          sources: response.sources || []
-        });
+    this.messages.push(assistantMessage);
+    this.textStreamAbortController = abortController;
 
-        this.loadSessions();
+    void this.chatbotService.streamAsk(
+      {
+        question: cleanQuestion,
+        k: 4,
+        filters: null,
+        session_id: this.currentSessionId,
+        voice_mode: false
       },
-      error: (error: unknown) => {
+      {
+        session: (sessionId) => {
+          this.currentSessionId = sessionId;
+          this.refreshStreamingView();
+        },
+        chunk: (text) => {
+          if (!text) return;
+
+          assistantMessage.text += text;
+          this.refreshStreamingView();
+        },
+        sources: (sources) => {
+          assistantMessage.sources = sources || [];
+          this.refreshStreamingView();
+        },
+        done: (sessionId) => {
+          if (sessionId) {
+            this.currentSessionId = sessionId;
+          }
+
+          this.loading = false;
+          this.loadSessions();
+          this.refreshStreamingView();
+        }
+      },
+      abortController.signal
+    )
+      .catch((error: unknown) => {
+        if (this.isAbortError(error)) return;
+
         console.error(error);
 
-        this.messages.push({
-          role: 'assistant',
-          text: 'Desole, une erreur est survenue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
-        });
-      },
-      complete: () => {
+        assistantMessage.text = assistantMessage.text ||
+          'Desole, une erreur est survenue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.';
         this.loading = false;
-      }
-    });
+        this.refreshStreamingView();
+      })
+      .finally(() => {
+        if (this.textStreamAbortController === abortController) {
+          this.textStreamAbortController = null;
+        }
+      });
   }
 
   toggleDictation(): void {
@@ -246,8 +292,9 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.voiceConversationActive = false;
     this.voiceLoopId += 1;
+    this.abortCurrentStream();
     this.clearVoiceRestartTimer();
-    this.stopAssistantAudio();
+    this.clearAssistantAudioQueue();
     this.loading = false;
     this.voiceChatLoading = false;
 
@@ -256,6 +303,7 @@ export class ChatbotWidgetComponent implements OnInit {
     }
 
     this.statusMessage = '';
+    this.refreshStreamingView();
   }
 
   private loadSessions(): void {
@@ -353,6 +401,7 @@ export class ChatbotWidgetComponent implements OnInit {
       this.statusMessage = mode === 'dictate'
         ? 'Dictee en cours...'
         : 'Je vous ecoute...';
+      this.refreshStreamingView();
 
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
@@ -367,6 +416,7 @@ export class ChatbotWidgetComponent implements OnInit {
         }
 
         this.cleanupRecording();
+        this.refreshStreamingView();
       };
 
       recorder.onstop = () => {
@@ -385,9 +435,10 @@ export class ChatbotWidgetComponent implements OnInit {
         }
 
         this.handleRecordedAudio(mode, chunks, recordingMimeType);
+        this.refreshStreamingView();
       };
 
-      recorder.start();
+      recorder.start(250);
       this.startSilenceDetection(stream);
     } catch (error) {
       console.error(error);
@@ -397,6 +448,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
       this.cleanupRecording();
       this.statusMessage = 'Microphone permission was denied or unavailable.';
+      this.refreshStreamingView();
     }
   }
 
@@ -405,19 +457,29 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.shouldProcessRecording = processAudio;
     this.statusMessage = processAudio ? 'Traitement audio...' : '';
-
-    if (!processAudio) {
-      this.recordingMode = null;
-    }
+    this.recordingMode = null;
+    this.refreshStreamingView();
 
     if (!recorder || recorder.state === 'inactive') {
       this.cleanupRecording();
+      this.refreshStreamingView();
       return;
     }
 
     this.stopSilenceDetection();
+    this.flushRecorderData(recorder);
     recorder.stop();
     this.stopMicrophoneTracks();
+  }
+
+  private flushRecorderData(recorder: MediaRecorder): void {
+    if (recorder.state !== 'recording') return;
+
+    try {
+      recorder.requestData();
+    } catch (error) {
+      console.warn('Unable to flush recorder data before stopping.', error);
+    }
   }
 
   private handleRecordedAudio(mode: VoiceRecordingMode, chunks: Blob[], mimeType: string): void {
@@ -425,11 +487,13 @@ export class ChatbotWidgetComponent implements OnInit {
 
     if (!token) {
       this.statusMessage = '';
+      this.refreshStreamingView();
       return;
     }
 
     if (!chunks.length) {
       this.statusMessage = 'No audio was captured.';
+      this.refreshStreamingView();
       return;
     }
 
@@ -448,6 +512,7 @@ export class ChatbotWidgetComponent implements OnInit {
   private transcribeDictation(audioBlob: Blob, token: string): void {
     this.dictationLoading = true;
     this.statusMessage = 'Transcribing voice input...';
+    this.refreshStreamingView();
 
     this.chatbotService.transcribeVoice(audioBlob, token).subscribe({
       next: (response: VoiceTranscribeResponse) => {
@@ -455,13 +520,16 @@ export class ChatbotWidgetComponent implements OnInit {
         this.statusMessage = response.transcript
           ? 'Transcript ready. Review it, then send when ready.'
           : 'No speech was detected.';
+        this.refreshStreamingView();
       },
       error: (error: unknown) => {
         console.error(error);
         this.statusMessage = 'Voice transcription failed.';
+        this.refreshStreamingView();
       },
       complete: () => {
         this.dictationLoading = false;
+        this.refreshStreamingView();
       }
     });
   }
@@ -472,6 +540,7 @@ export class ChatbotWidgetComponent implements OnInit {
     this.loading = true;
     this.voiceChatLoading = true;
     this.statusMessage = 'Transcription de votre question...';
+    this.refreshStreamingView();
 
     this.chatbotService.transcribeVoice(audioBlob, token).subscribe({
       next: (response: VoiceTranscribeResponse) => {
@@ -484,6 +553,7 @@ export class ChatbotWidgetComponent implements OnInit {
           this.voiceChatLoading = false;
           this.statusMessage = 'No speech was detected.';
           this.scheduleNextVoiceListening(350);
+          this.refreshStreamingView();
           return;
         }
 
@@ -491,6 +561,7 @@ export class ChatbotWidgetComponent implements OnInit {
           role: 'user',
           text: transcript
         });
+        this.refreshStreamingView();
 
         this.askTextFromVoiceTranscript(transcript, activeVoiceLoopId);
       },
@@ -506,62 +577,165 @@ export class ChatbotWidgetComponent implements OnInit {
           role: 'assistant',
           text: 'Desole, la transcription vocale a echoue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
         });
+        this.refreshStreamingView();
       }
     });
   }
 
   private askTextFromVoiceTranscript(transcript: string, activeVoiceLoopId: number): void {
     this.statusMessage = 'Preparation de la reponse...';
+    this.pendingSpeechText = '';
+    this.pendingTtsRequests = 0;
+    this.audioQueue = [];
+    this.voiceStreamCompleted = false;
 
-    this.chatbotService.ask(transcript, this.currentSessionId).subscribe({
-      next: (response: AskResponse) => {
-        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      text: '',
+      sources: []
+    };
 
-        this.currentSessionId = response.session_id;
+    this.messages.push(assistantMessage);
 
-        this.messages.push({
-          role: 'assistant',
-          text: response.answer,
-          sources: response.sources || []
-        });
+    const abortController = new AbortController();
+    this.streamAbortController = abortController;
 
-        this.loadSessions();
-        this.loading = false;
-        this.voiceChatLoading = false;
-        this.statusMessage = 'Generation de la voix...';
-        this.speakVoiceAnswer(response.answer, activeVoiceLoopId);
+    void this.chatbotService.streamAsk(
+      {
+        question: transcript,
+        k: 4,
+        filters: null,
+        session_id: this.currentSessionId,
+        voice_mode: true
       },
-      error: (error: unknown) => {
+      {
+        session: (sessionId) => {
+          if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+          this.currentSessionId = sessionId;
+          this.refreshStreamingView();
+        },
+        chunk: (text) => {
+          if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+          if (!text) return;
+
+          assistantMessage.text += text;
+          this.pendingSpeechText += text;
+          this.queueCompletedSentences(false, activeVoiceLoopId);
+          this.statusMessage = 'Reponse en cours...';
+          this.refreshStreamingView();
+        },
+        sources: (sources) => {
+          if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+          assistantMessage.sources = sources || [];
+          this.refreshStreamingView();
+        },
+        done: (sessionId) => {
+          if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+          if (sessionId) {
+            this.currentSessionId = sessionId;
+          }
+
+          this.voiceStreamCompleted = true;
+          this.queueCompletedSentences(true, activeVoiceLoopId);
+          this.loadSessions();
+          this.loading = false;
+          this.voiceChatLoading = false;
+          this.statusMessage = this.hasPendingVoiceAudio()
+            ? 'Generation de la voix...'
+            : 'Mode vocal actif.';
+          this.maybeFinishVoicePlayback(activeVoiceLoopId);
+          this.refreshStreamingView();
+        }
+      },
+      abortController.signal
+    )
+      .catch((error: unknown) => {
         if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+        if (this.isAbortError(error)) return;
 
         console.error(error);
         this.loading = false;
         this.voiceChatLoading = false;
         this.voiceConversationActive = false;
+        this.clearAssistantAudioQueue();
 
-        this.messages.push({
-          role: 'assistant',
-          text: 'Desole, une erreur est survenue pendant le chat vocal. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
-        });
-      }
-    });
+        assistantMessage.text = assistantMessage.text ||
+          'Desole, une erreur est survenue pendant le chat vocal. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.';
+        this.refreshStreamingView();
+      })
+      .finally(() => {
+        if (this.streamAbortController === abortController) {
+          this.streamAbortController = null;
+        }
+      });
   }
 
-  private speakVoiceAnswer(answer: string, activeVoiceLoopId: number): void {
+  private queueCompletedSentences(force: boolean, activeVoiceLoopId: number): void {
+    const sentences = this.drainCompletedSentences(force);
+
+    for (const sentence of sentences) {
+      this.requestSentenceAudio(sentence, activeVoiceLoopId);
+    }
+  }
+
+  private drainCompletedSentences(force: boolean): string[] {
+    const sentences: string[] = [];
+    let text = this.pendingSpeechText;
+    const sentencePattern = /^([\s\S]*?[.!?])(\s+|$)/;
+    let match = sentencePattern.exec(text);
+
+    while (match) {
+      const sentence = match[1].trim();
+
+      if (sentence) {
+        sentences.push(sentence);
+      }
+
+      text = text.slice(match[0].length);
+      match = sentencePattern.exec(text);
+    }
+
+    if (force && text.trim()) {
+      sentences.push(text.trim());
+      text = '';
+    }
+
+    this.pendingSpeechText = text;
+
+    return sentences;
+  }
+
+  private requestSentenceAudio(sentence: string, activeVoiceLoopId: number): void {
     if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
 
-    this.chatbotService.speakText(answer).subscribe({
+    const text = sentence.trim();
+
+    if (!text) return;
+
+    this.pendingTtsRequests += 1;
+
+    this.chatbotService.speakText(text).subscribe({
       next: (response) => {
         if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
 
-        this.playAssistantAudio(response.audio_url, () => this.scheduleNextVoiceListening(350));
+        const absoluteAudioUrl = this.chatbotService.getAbsoluteAudioUrl(response.audio_url);
+
+        if (absoluteAudioUrl) {
+          this.audioQueue.push(absoluteAudioUrl);
+          this.playNextAssistantAudio(activeVoiceLoopId);
+        }
       },
       error: (error: unknown) => {
         if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
 
         console.error(error);
         this.statusMessage = 'The text answer is ready, but voice generation failed.';
-        this.scheduleNextVoiceListening(600);
+      },
+      complete: () => {
+        this.pendingTtsRequests = Math.max(0, this.pendingTtsRequests - 1);
+        this.maybeFinishVoicePlayback(activeVoiceLoopId);
       }
     });
   }
@@ -570,15 +744,22 @@ export class ChatbotWidgetComponent implements OnInit {
     return this.voiceConversationActive && activeVoiceLoopId === this.voiceLoopId;
   }
 
-  private playAssistantAudio(audioUrl?: string | null, onDone?: () => void): void {
-    const absoluteAudioUrl = this.chatbotService.getAbsoluteAudioUrl(audioUrl);
+  private refreshStreamingView(): void {
+    this.changeDetector.detectChanges();
+  }
 
-    if (!absoluteAudioUrl) {
-      onDone?.();
+  private playNextAssistantAudio(activeVoiceLoopId: number): void {
+    if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+    if (this.assistantSpeaking || this.assistantAudio) return;
+
+    const audioUrl = this.audioQueue.shift();
+
+    if (!audioUrl) {
+      this.maybeFinishVoicePlayback(activeVoiceLoopId);
       return;
     }
 
-    const audio = new Audio(absoluteAudioUrl);
+    const audio = new Audio(audioUrl);
     this.assistantAudio = audio;
     this.assistantSpeaking = true;
     this.statusMessage = 'Reponse vocale...';
@@ -586,13 +767,15 @@ export class ChatbotWidgetComponent implements OnInit {
     audio.onended = () => {
       this.assistantSpeaking = false;
       this.assistantAudio = null;
-      onDone?.();
+      this.playNextAssistantAudio(activeVoiceLoopId);
+      this.maybeFinishVoicePlayback(activeVoiceLoopId);
     };
 
     audio.onerror = () => {
       this.assistantSpeaking = false;
       this.assistantAudio = null;
-      onDone?.();
+      this.playNextAssistantAudio(activeVoiceLoopId);
+      this.maybeFinishVoicePlayback(activeVoiceLoopId);
     };
 
     audio.play().catch((error: unknown) => {
@@ -600,8 +783,32 @@ export class ChatbotWidgetComponent implements OnInit {
       this.assistantSpeaking = false;
       this.assistantAudio = null;
       this.statusMessage = 'The voice answer is ready, but playback was blocked by the browser.';
-      onDone?.();
+      this.playNextAssistantAudio(activeVoiceLoopId);
+      this.maybeFinishVoicePlayback(activeVoiceLoopId);
     });
+  }
+
+  private maybeFinishVoicePlayback(activeVoiceLoopId: number): void {
+    if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+    if (!this.hasPendingVoiceAudio()) {
+      this.statusMessage = 'Mode vocal actif.';
+      this.scheduleNextVoiceListening(350);
+    }
+  }
+
+  private hasPendingVoiceAudio(): boolean {
+    return (
+      !this.voiceStreamCompleted ||
+      this.pendingTtsRequests > 0 ||
+      this.assistantSpeaking ||
+      Boolean(this.assistantAudio) ||
+      this.audioQueue.length > 0
+    );
+  }
+
+  private isAbortError(error: unknown): boolean {
+    return error instanceof DOMException && error.name === 'AbortError';
   }
 
   private stopSilenceDetection(): void {
@@ -633,7 +840,10 @@ export class ChatbotWidgetComponent implements OnInit {
   }
 
   private stopAssistantAudio(): void {
-    if (!this.assistantAudio) return;
+    if (!this.assistantAudio) {
+      this.assistantSpeaking = false;
+      return;
+    }
 
     this.assistantAudio.onended = null;
     this.assistantAudio.onerror = null;
@@ -641,6 +851,30 @@ export class ChatbotWidgetComponent implements OnInit {
     this.assistantAudio.currentTime = 0;
     this.assistantAudio = null;
     this.assistantSpeaking = false;
+  }
+
+  private abortCurrentStream(): void {
+    if (!this.streamAbortController) return;
+
+    this.streamAbortController.abort();
+    this.streamAbortController = null;
+  }
+
+  private abortTextStream(): void {
+    if (!this.textStreamAbortController) return;
+
+    this.textStreamAbortController.abort();
+    this.textStreamAbortController = null;
+    this.loading = false;
+    this.refreshStreamingView();
+  }
+
+  private clearAssistantAudioQueue(): void {
+    this.audioQueue = [];
+    this.pendingSpeechText = '';
+    this.pendingTtsRequests = 0;
+    this.voiceStreamCompleted = false;
+    this.stopAssistantAudio();
   }
 
   private clearVoiceRestartTimer(): void {

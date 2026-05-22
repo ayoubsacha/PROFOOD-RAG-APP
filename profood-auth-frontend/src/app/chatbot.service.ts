@@ -26,6 +26,21 @@ export interface TtsSpeakResponse {
   audio_url: string;
 }
 
+export interface AskStreamPayload {
+  question: string;
+  session_id?: string | null;
+  k?: number | null;
+  filters?: Record<string, any> | null;
+  voice_mode?: boolean;
+}
+
+export interface AskStreamHandlers {
+  session?: (sessionId: string) => void;
+  chunk?: (text: string) => void;
+  sources?: (sources: SourceChunk[]) => void;
+  done?: (sessionId?: string) => void;
+}
+
 export interface ChatSessionMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -89,6 +104,63 @@ export class ChatbotService {
     );
   }
 
+  async streamAsk(
+    payload: AskStreamPayload,
+    handlers: AskStreamHandlers,
+    signal?: AbortSignal
+  ): Promise<void> {
+    const token = this.authService.getToken();
+
+    if (!token) {
+      throw new Error('Missing authentication token.');
+    }
+
+    const response = await fetch(`${this.ragApiUrl}/ask/stream`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        question: payload.question,
+        k: payload.k ?? 4,
+        filters: payload.filters ?? null,
+        session_id: payload.session_id || null,
+        voice_mode: payload.voice_mode === true
+      }),
+      signal
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    if (!response.body) {
+      throw new Error('Streaming is not supported by this browser.');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+      buffer = this.processSseBuffer(buffer, handlers);
+    }
+
+    buffer += decoder.decode();
+
+    if (buffer.trim()) {
+      this.processSseBuffer(`${buffer}\n\n`, handlers);
+    }
+  }
+
   getAbsoluteAudioUrl(audioUrl?: string | null): string | null {
     if (!audioUrl) return null;
 
@@ -138,6 +210,51 @@ export class ChatbotService {
 
   private getTokenHeaders(token: string): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
+  private processSseBuffer(buffer: string, handlers: AskStreamHandlers): string {
+    const events = buffer.split('\n\n');
+    const remainder = events.pop() || '';
+
+    for (const rawEvent of events) {
+      this.handleSseEvent(rawEvent, handlers);
+    }
+
+    return remainder;
+  }
+
+  private handleSseEvent(rawEvent: string, handlers: AskStreamHandlers): void {
+    const lines = rawEvent.split('\n');
+    let eventType = 'message';
+    const dataLines: string[] = [];
+
+    for (const line of lines) {
+      if (line.startsWith('event:')) {
+        eventType = line.slice(6).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    }
+
+    const dataText = dataLines.join('\n');
+    const data = dataText ? JSON.parse(dataText) : {};
+
+    switch (eventType) {
+      case 'session':
+        handlers.session?.(data.session_id);
+        break;
+      case 'chunk':
+        handlers.chunk?.(data.text || '');
+        break;
+      case 'sources':
+        handlers.sources?.(data.sources || []);
+        break;
+      case 'done':
+        handlers.done?.(data.session_id);
+        break;
+      case 'error':
+        throw new Error(data.message || 'Streaming failed.');
+    }
   }
 
   private createAudioFormData(audioBlob: Blob): FormData {

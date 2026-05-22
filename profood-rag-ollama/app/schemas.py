@@ -14,6 +14,13 @@ class AskRequest(BaseModel):
     )
 
 
+class AskStreamRequest(AskRequest):
+    voice_mode: bool = Field(
+        default=False,
+        description="Use the short spoken-answer prompt only for voice streaming.",
+    )
+
+
 class SourceChunk(BaseModel):
     source: str | None = None
     page: int | None = None

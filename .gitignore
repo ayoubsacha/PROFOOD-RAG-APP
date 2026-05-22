@@ -5,6 +5,12 @@ __pycache__/
 *.pyc
 .env
 data/chroma/
+profood-rag-ollama/data/audio/
+profood-rag-ollama/data/tts/
+profood-rag-ollama/data/chroma/
+profood-rag-ollama/data/**/*.mp3
+profood-rag-ollama/data/**/*.webm
+profood-rag-ollama/data/**/*.wav
 
 # Node / Angular / Express
 node_modules/
