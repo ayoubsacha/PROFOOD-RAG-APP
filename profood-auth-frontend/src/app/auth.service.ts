@@ -1,6 +1,6 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient , HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable , tap } from 'rxjs';
 
 export interface AuthUser {
   id: string;
@@ -25,6 +25,7 @@ export interface MeResponse {
 @Injectable({
   providedIn: 'root'
 })
+
 export class AuthService {
   private readonly authApiUrl = 'http://localhost:4000/auth';
 

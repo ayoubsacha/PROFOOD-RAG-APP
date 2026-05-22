@@ -9,7 +9,6 @@ import {
   ChatSessionSummary,
   ChatbotService,
   SourceChunk,
-  VoiceAskResponse,
   VoiceTranscribeResponse
 } from '../chatbot.service';
 
@@ -20,11 +19,6 @@ interface ChatMessage {
 }
 
 type VoiceRecordingMode = 'dictate' | 'voice-chat';
-
-const WELCOME_MESSAGE: ChatMessage = {
-  role: 'assistant',
-  text: 'Bonjour. Je suis l assistant intelligent de ProFood. Posez une question sur les produits, equipements ou services professionnels.'
-};
 
 @Component({
   selector: 'app-chatbot-widget',
@@ -47,12 +41,11 @@ export class ChatbotWidgetComponent implements OnInit {
 
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
-  messages: ChatMessage[] = [{ ...WELCOME_MESSAGE }];
+  messages: ChatMessage[] = [];
   private readonly silenceThreshold = 0.03;
   private readonly silenceDelayMs = 900;
   private readonly maxIdleRecordingMs = 5000;
-  private readonly maxVoiceChatRecordingMs = 20000;
-  private readonly maxDictationRecordingMs = 45000;
+  private readonly maxRecordingMs = 15000;
   private audioStream: MediaStream | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private audioContext: AudioContext | null = null;
@@ -98,6 +91,21 @@ export class ChatbotWidgetComponent implements OnInit {
     return 'Mode vocal';
   }
 
+  get displayName(): string {
+    const user = this.authService.getUser();
+    const name = user?.name || user?.email?.split('@')[0] || 'user';
+
+    return name.trim().split(/\s+/)[0] || 'user';
+  }
+
+  get userInitial(): string {
+    return this.displayName.charAt(0).toUpperCase();
+  }
+
+  get showWelcomeState(): boolean {
+    return this.messages.length === 0;
+  }
+
   toggleChat(): void {
     this.isOpen = !this.isOpen;
 
@@ -124,7 +132,7 @@ export class ChatbotWidgetComponent implements OnInit {
       next: (session) => {
         this.sessions = [session, ...this.sessions.filter((item) => item.id !== session.id)];
         this.currentSessionId = session.id;
-        this.messages = [{ ...WELCOME_MESSAGE }];
+        this.messages = [];
         this.statusMessage = 'New session ready.';
       },
       error: (error: unknown) => this.handleSessionError(error),
@@ -156,7 +164,7 @@ export class ChatbotWidgetComponent implements OnInit {
       next: () => {
         this.sessions = this.sessions.filter((session) => session.id !== sessionId);
         this.currentSessionId = null;
-        this.messages = [{ ...WELCOME_MESSAGE }];
+        this.messages = [];
         this.statusMessage = 'Session deleted.';
       },
       error: (error: unknown) => this.handleSessionError(error),
@@ -240,12 +248,14 @@ export class ChatbotWidgetComponent implements OnInit {
     this.voiceLoopId += 1;
     this.clearVoiceRestartTimer();
     this.stopAssistantAudio();
+    this.loading = false;
+    this.voiceChatLoading = false;
 
     if (this.recordingMode === 'voice-chat') {
       this.stopRecording(false);
     }
 
-    this.statusMessage = this.voiceChatLoading ? 'Arret du mode vocal...' : '';
+    this.statusMessage = '';
   }
 
   private loadSessions(): void {
@@ -272,7 +282,7 @@ export class ChatbotWidgetComponent implements OnInit {
           text: message.content,
           sources: message.sources || []
         }))
-      : [{ ...WELCOME_MESSAGE }];
+      : [];
   }
 
   private handleSessionError(error: unknown): void {
@@ -378,7 +388,7 @@ export class ChatbotWidgetComponent implements OnInit {
       };
 
       recorder.start();
-      this.startSilenceDetection(stream, mode);
+      this.startSilenceDetection(stream);
     } catch (error) {
       console.error(error);
       if (mode === 'voice-chat') {
@@ -391,11 +401,23 @@ export class ChatbotWidgetComponent implements OnInit {
   }
 
   private stopRecording(processAudio = true): void {
-    if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') return;
+    const recorder = this.mediaRecorder;
 
     this.shouldProcessRecording = processAudio;
-    this.mediaRecorder.stop();
     this.statusMessage = processAudio ? 'Traitement audio...' : '';
+
+    if (!processAudio) {
+      this.recordingMode = null;
+    }
+
+    if (!recorder || recorder.state === 'inactive') {
+      this.cleanupRecording();
+      return;
+    }
+
+    this.stopSilenceDetection();
+    recorder.stop();
+    this.stopMicrophoneTracks();
   }
 
   private handleRecordedAudio(mode: VoiceRecordingMode, chunks: Blob[], mimeType: string): void {
@@ -420,7 +442,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     if (!this.voiceConversationActive) return;
 
-    this.askWithVoice(audioBlob, token);
+    this.askWithTranscribedVoice(audioBlob, token);
   }
 
   private transcribeDictation(audioBlob: Blob, token: string): void {
@@ -444,23 +466,58 @@ export class ChatbotWidgetComponent implements OnInit {
     });
   }
 
-  private askWithVoice(audioBlob: Blob, token: string): void {
+  private askWithTranscribedVoice(audioBlob: Blob, token: string): void {
     const activeVoiceLoopId = this.voiceLoopId;
 
     this.loading = true;
     this.voiceChatLoading = true;
-    this.statusMessage = 'Preparation de la reponse...';
+    this.statusMessage = 'Transcription de votre question...';
 
-    this.chatbotService.askVoice(audioBlob, token, this.currentSessionId).subscribe({
-      next: (response: VoiceAskResponse) => {
-        const shouldContinueVoice = this.voiceConversationActive && activeVoiceLoopId === this.voiceLoopId;
+    this.chatbotService.transcribeVoice(audioBlob, token).subscribe({
+      next: (response: VoiceTranscribeResponse) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
 
-        this.currentSessionId = response.session_id || this.currentSessionId;
+        const transcript = (response.transcript || '').trim();
+
+        if (!transcript) {
+          this.loading = false;
+          this.voiceChatLoading = false;
+          this.statusMessage = 'No speech was detected.';
+          this.scheduleNextVoiceListening(350);
+          return;
+        }
 
         this.messages.push({
           role: 'user',
-          text: response.transcript
+          text: transcript
         });
+
+        this.askTextFromVoiceTranscript(transcript, activeVoiceLoopId);
+      },
+      error: (error: unknown) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+        console.error(error);
+        this.loading = false;
+        this.voiceChatLoading = false;
+        this.voiceConversationActive = false;
+
+        this.messages.push({
+          role: 'assistant',
+          text: 'Desole, la transcription vocale a echoue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
+        });
+      }
+    });
+  }
+
+  private askTextFromVoiceTranscript(transcript: string, activeVoiceLoopId: number): void {
+    this.statusMessage = 'Preparation de la reponse...';
+
+    this.chatbotService.ask(transcript, this.currentSessionId).subscribe({
+      next: (response: AskResponse) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+        this.currentSessionId = response.session_id;
 
         this.messages.push({
           role: 'assistant',
@@ -468,27 +525,49 @@ export class ChatbotWidgetComponent implements OnInit {
           sources: response.sources || []
         });
 
-        if (shouldContinueVoice) {
-          this.playAssistantAudio(response.audio_url, () => this.scheduleNextVoiceListening(350));
-        }
-
         this.loadSessions();
-        this.statusMessage = shouldContinueVoice ? 'Reponse vocale...' : '';
+        this.loading = false;
+        this.voiceChatLoading = false;
+        this.statusMessage = 'Generation de la voix...';
+        this.speakVoiceAnswer(response.answer, activeVoiceLoopId);
       },
       error: (error: unknown) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
         console.error(error);
+        this.loading = false;
+        this.voiceChatLoading = false;
         this.voiceConversationActive = false;
 
         this.messages.push({
           role: 'assistant',
           text: 'Desole, une erreur est survenue pendant le chat vocal. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
         });
-      },
-      complete: () => {
-        this.loading = false;
-        this.voiceChatLoading = false;
       }
     });
+  }
+
+  private speakVoiceAnswer(answer: string, activeVoiceLoopId: number): void {
+    if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+    this.chatbotService.speakText(answer).subscribe({
+      next: (response) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+        this.playAssistantAudio(response.audio_url, () => this.scheduleNextVoiceListening(350));
+      },
+      error: (error: unknown) => {
+        if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
+
+        console.error(error);
+        this.statusMessage = 'The text answer is ready, but voice generation failed.';
+        this.scheduleNextVoiceListening(600);
+      }
+    });
+  }
+
+  private isActiveVoiceLoop(activeVoiceLoopId: number): boolean {
+    return this.voiceConversationActive && activeVoiceLoopId === this.voiceLoopId;
   }
 
   private playAssistantAudio(audioUrl?: string | null, onDone?: () => void): void {
@@ -525,20 +604,28 @@ export class ChatbotWidgetComponent implements OnInit {
     });
   }
 
-  private cleanupRecording(): void {
+  private stopSilenceDetection(): void {
     if (this.silenceFrameId !== null) {
       window.cancelAnimationFrame(this.silenceFrameId);
     }
 
-    void this.audioContext?.close();
+    this.silenceFrameId = null;
+  }
+
+  private stopMicrophoneTracks(): void {
     this.audioStream?.getTracks().forEach((track) => track.stop());
+  }
+
+  private cleanupRecording(): void {
+    this.stopSilenceDetection();
+    this.stopMicrophoneTracks();
+    void this.audioContext?.close();
     this.audioContext = null;
     this.audioSource = null;
     this.audioStream = null;
     this.mediaRecorder = null;
     this.recordedChunks = [];
     this.recordingMode = null;
-    this.silenceFrameId = null;
     this.speechDetected = false;
     this.silenceStartedAt = null;
     this.recordingStartedAt = 0;
@@ -578,15 +665,13 @@ export class ChatbotWidgetComponent implements OnInit {
     }, delayMs);
   }
 
-  private startSilenceDetection(stream: MediaStream, mode: VoiceRecordingMode): void {
+  private startSilenceDetection(stream: MediaStream): void {
     if (typeof window.AudioContext === 'undefined') return;
 
     const audioContext = new AudioContext();
     const analyser = audioContext.createAnalyser();
     const samples = new Float32Array(analyser.fftSize);
-    const maxRecordingMs = mode === 'voice-chat'
-      ? this.maxVoiceChatRecordingMs
-      : this.maxDictationRecordingMs;
+    const maxRecordingMs = this.maxRecordingMs;
 
     analyser.fftSize = 2048;
     this.audioContext = audioContext;

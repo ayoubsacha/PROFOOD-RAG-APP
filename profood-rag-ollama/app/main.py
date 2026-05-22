@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -26,7 +26,8 @@ from app.schemas import (
     ChatSessionCreateRequest,
     ChatSessionSummary,
     IngestResponse,
-    VoiceAskResponse,
+    TtsSpeakRequest,
+    TtsSpeakResponse,
     VoiceTranscribeResponse,
 )
 from app.tts import text_to_speech
@@ -56,24 +57,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-def _voice_question_for_french_answer(transcript: str) -> str:
-    return (
-        f"{transcript}\n\n"
-        "Instruction pour la reponse vocale: reponds uniquement en francais clair et naturel. "
-        "N'utilise pas l'anglais. Garde la reponse courte et facile a comprendre a l'oral."
-    )
-
-
-def _normalize_voice_answer(answer: str) -> str:
-    if answer.startswith("Profood does not have enough data yet"):
-        return (
-            "ProFood ne dispose pas encore de suffisamment de donnees. "
-            "Ajoutez ou ingerez d'abord des documents, puis reessayez."
-        )
-
-    return answer
 
 
 @app.get("/", response_model=None)
@@ -270,66 +253,24 @@ async def voice_transcribe(
         ) from exc
 
 
-@app.post("/voice/ask", response_model=VoiceAskResponse)
-async def voice_ask(
-    file: Annotated[UploadFile, File(...)],
-    session_id: Annotated[str | None, Form()] = None,
+@app.post("/tts/speak", response_model=TtsSpeakResponse)
+async def tts_speak(
+    payload: TtsSpeakRequest,
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    text = payload.text.strip()
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Text is required for speech synthesis.")
+
     try:
-        user_id = current_user["user_id"]
-        clean_session_id = session_id.strip() if session_id and session_id.strip() else None
+        audio_url = await text_to_speech(text)
+        return {"audio_url": audio_url}
 
-        audio_path = await save_uploaded_audio(file)
-        transcript = transcribe_audio(audio_path)
-
-        if not transcript:
-            raise HTTPException(status_code=400, detail="No speech could be transcribed from the audio.")
-
-        session = await ensure_chat_session(
-            user_id=user_id,
-            session_id=clean_session_id,
-            title=transcript,
-        )
-        active_session_id = session["id"]
-
-        await add_user_message(
-            user_id=user_id,
-            session_id=active_session_id,
-            content=transcript,
-        )
-
-        rag_response = ask(question=_voice_question_for_french_answer(transcript))
-        answer = _normalize_voice_answer(rag_response["answer"])
-
-        await add_assistant_message(
-            user_id=user_id,
-            session_id=active_session_id,
-            content=answer,
-            sources=rag_response.get("sources", []),
-        )
-
-        audio_url = await text_to_speech(answer)
-
-        return {
-            "transcript": transcript,
-            "answer": answer,
-            "sources": rag_response.get("sources", []),
-            "session_id": active_session_id,
-            "audio_url": audio_url,
-        }
-
-    except ChatSessionNotFound as exc:
-        raise HTTPException(status_code=404, detail="Chat session not found") from exc
-    except HTTPException:
-        raise
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Voice question answering failed. Check that Ollama is running, models are pulled, "
-                f"and documents have been ingested. Original error: {exc}"
-            ),
+            detail=f"Text-to-speech generation failed. Original error: {exc}",
         ) from exc
 
 

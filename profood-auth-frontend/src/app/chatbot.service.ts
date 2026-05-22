@@ -22,12 +22,8 @@ export interface VoiceTranscribeResponse {
   transcript: string;
 }
 
-export interface VoiceAskResponse {
-  transcript: string;
-  answer: string;
-  sources: SourceChunk[];
-  session_id?: string | null;
-  audio_url?: string | null;
+export interface TtsSpeakResponse {
+  audio_url: string;
 }
 
 export interface ChatSessionMessage {
@@ -85,17 +81,11 @@ export class ChatbotService {
     );
   }
 
-  askVoice(audioBlob: Blob, token: string, sessionId?: string | null): Observable<VoiceAskResponse> {
-    const formData = this.createAudioFormData(audioBlob);
-
-    if (sessionId) {
-      formData.append('session_id', sessionId);
-    }
-
-    return this.http.post<VoiceAskResponse>(
-      `${this.ragApiUrl}/voice/ask`,
-      formData,
-      { headers: this.getTokenHeaders(token) }
+  speakText(text: string): Observable<TtsSpeakResponse> {
+    return this.http.post<TtsSpeakResponse>(
+      `${this.ragApiUrl}/tts/speak`,
+      { text },
+      { headers: this.getAuthHeaders() }
     );
   }
 

@@ -32,12 +32,12 @@ class VoiceTranscribeResponse(BaseModel):
     transcript: str
 
 
-class VoiceAskResponse(BaseModel):
-    transcript: str
-    answer: str
-    sources: list[SourceChunk]
-    session_id: str | None = None
-    audio_url: str | None = None
+class TtsSpeakRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+
+
+class TtsSpeakResponse(BaseModel):
+    audio_url: str
 
 
 class IngestResponse(BaseModel):
