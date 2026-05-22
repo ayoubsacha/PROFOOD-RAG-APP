@@ -15,6 +15,7 @@ type Tab = 'login' | 'register';
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.css'
 })
+
 export class LoginPageComponent implements OnInit {
   activeTab: Tab = 'login';
   loading = false;

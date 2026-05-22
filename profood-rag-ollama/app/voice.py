@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 from uuid import uuid4
 
@@ -19,6 +18,12 @@ CONTENT_TYPE_SUFFIXES = {
     "audio/wav": ".wav",
     "audio/x-wav": ".wav",
 }
+
+WHISPER_MODEL = WhisperModel(
+    settings.whisper_model_size,
+    device="cpu",
+    compute_type="int8",
+)
 
 
 def _project_root() -> Path:
@@ -58,17 +63,12 @@ async def save_uploaded_audio(file: UploadFile) -> Path:
     return destination
 
 
-@lru_cache(maxsize=1)
-def _get_whisper_model() -> WhisperModel:
-    return WhisperModel(
-        settings.whisper_model_size,
-        device="cpu",
-        compute_type="int8",
-    )
-
-
 def transcribe_audio(file_path: str | Path) -> str:
-    segments, _ = _get_whisper_model().transcribe(str(file_path), beam_size=5)
+    segments, _ = WHISPER_MODEL.transcribe(
+        str(file_path),
+        beam_size=1,
+        vad_filter=True,
+    )
     transcript_parts = [segment.text.strip() for segment in segments if segment.text.strip()]
 
     return " ".join(transcript_parts).strip()
