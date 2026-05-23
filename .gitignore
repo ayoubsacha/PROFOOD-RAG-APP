@@ -8,9 +8,14 @@ data/chroma/
 profood-rag-ollama/data/audio/
 profood-rag-ollama/data/tts/
 profood-rag-ollama/data/chroma/
+profood-rag-ollama/data/images/
 profood-rag-ollama/data/**/*.mp3
 profood-rag-ollama/data/**/*.webm
 profood-rag-ollama/data/**/*.wav
+profood-rag-ollama/data/**/*.png
+profood-rag-ollama/data/**/*.jpg
+profood-rag-ollama/data/**/*.jpeg
+profood-rag-ollama/data/**/*.webp
 
 # Node / Angular / Express
 node_modules/

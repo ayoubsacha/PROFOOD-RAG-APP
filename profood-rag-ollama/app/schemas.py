@@ -35,6 +35,13 @@ class AskResponse(BaseModel):
     session_id: str
 
 
+class ImageAskResponse(BaseModel):
+    image_description: str
+    answer: str
+    sources: list[SourceChunk]
+    session_id: str | None = None
+
+
 class VoiceTranscribeResponse(BaseModel):
     transcript: str
 

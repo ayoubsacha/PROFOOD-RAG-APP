@@ -184,21 +184,42 @@
         *ngFor="let message of messages"
         class="message-wrapper"
         [class.user-wrapper]="message.role === 'user'"
+        [class.assistant-wrapper]="message.role === 'assistant'"
       >
         <img
           class="message-avatar"
           *ngIf="message.role === 'assistant'"
-          src="assets/profood-chef-bot-transparent.png"
+          src="assets/profood-chef-bot-avatar-v2.png"
           alt="Assistant"
         />
 
         <div class="message-stack">
+          <div class="message-meta" *ngIf="message.role === 'assistant'">
+            <span aria-hidden="true"></span>
+            <strong>ProFood AI</strong>
+          </div>
+
+          <img
+            class="message-image"
+            *ngIf="message.imagePreview"
+            [src]="message.imagePreview"
+            alt="Image envoyee"
+          />
+
           <div
             class="message"
             [class.user]="message.role === 'user'"
             [class.assistant]="message.role === 'assistant'"
           >
             {{ message.text }}
+          </div>
+
+          <div class="image-description" *ngIf="message.imageDescription">
+            <button type="button" (click)="message.showImageDescription = !message.showImageDescription">
+              Description technique de l image
+            </button>
+
+            <p *ngIf="message.showImageDescription">{{ message.imageDescription }}</p>
           </div>
 
           <div class="sources" *ngIf="message.sources && message.sources.length > 0">
@@ -284,7 +305,23 @@
       </button>
     </div>
 
-    <form class="chat-input" (ngSubmit)="sendMessage()">
+    <div class="selected-image-preview" *ngIf="selectedImagePreview">
+      <img [src]="selectedImagePreview" alt="Image selectionnee" />
+
+      <span>
+        <strong>Image prete</strong>
+        <small>{{ selectedImageFile?.name }}</small>
+      </span>
+
+      <button type="button" (click)="clearSelectedImage()" aria-label="Retirer l image">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 6 6 18"></path>
+          <path d="m6 6 12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <form class="chat-input" (ngSubmit)="submitChat()">
       <div class="input-chip" aria-hidden="true">
         <span></span>
         <strong>RAG Mode</strong>
@@ -299,6 +336,31 @@
         autocomplete="off"
         [disabled]="voiceConversationActive || recordingMode === 'voice-chat'"
       />
+
+      <input
+        #imageInput
+        class="image-file-input"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        (change)="onImageSelected($event)"
+      />
+
+      <button
+        class="icon-control image-control"
+        type="button"
+        (click)="imageInput.click()"
+        [class.has-image]="selectedImageFile"
+        [disabled]="isBusy || recordingMode !== null || voiceConversationActive"
+        title="Image"
+        aria-label="Ajouter une image"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+          <path d="m8 13 2.5-2.5L15 15"></path>
+          <path d="m14 13 2-2 3 3"></path>
+          <circle cx="8" cy="9" r="1"></circle>
+        </svg>
+      </button>
 
       <button
         class="icon-control dictate-control"
@@ -335,7 +397,7 @@
         <span class="stop-square" *ngIf="voiceConversationActive || recordingMode === 'voice-chat' || voiceChatLoading || assistantSpeaking"></span>
       </button>
 
-      <button class="send-button" type="submit" [disabled]="isBusy || recordingMode !== null || voiceConversationActive || !question.trim()" aria-label="Send message">
+      <button class="send-button" type="submit" [disabled]="isBusy || recordingMode !== null || voiceConversationActive || (!selectedImageFile && !question.trim())" aria-label="Send message">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M22 2 11 13"></path>
           <path d="m22 2-7 20-4-9-9-4 20-7Z"></path>

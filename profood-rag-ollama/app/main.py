@@ -5,7 +5,7 @@ from threading import Event, Thread
 from time import perf_counter
 from typing import Annotated, Any
 
-from fastapi import Body, Depends, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,6 +23,7 @@ from app.chat_history import (
     list_chat_sessions,
 )
 from app.config import settings
+from app.image_vision import analyze_image_with_llava, save_uploaded_image
 from app.rag import _resolve_path, ask, ingest_pdfs, reset_vector_store, stream_answer_chunks
 from app.schemas import (
     AskRequest,
@@ -31,6 +32,7 @@ from app.schemas import (
     ChatSession,
     ChatSessionCreateRequest,
     ChatSessionSummary,
+    ImageAskResponse,
     IngestResponse,
     TtsSpeakRequest,
     TtsSpeakResponse,
@@ -91,6 +93,24 @@ def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
 
 def _sse(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _parse_filters(raw_filters: str | None) -> dict[str, Any] | None:
+    if not raw_filters:
+        return None
+
+    try:
+        parsed_filters = json.loads(raw_filters)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="filters must be valid JSON.") from exc
+
+    if parsed_filters is None:
+        return None
+
+    if not isinstance(parsed_filters, dict):
+        raise HTTPException(status_code=400, detail="filters must be a JSON object.")
+
+    return parsed_filters
 
 
 @app.get("/", response_model=None)
@@ -269,6 +289,95 @@ async def ask_question(
             detail=(
                 "Question answering failed. Check that Ollama is running, models are pulled, "
                 f"and documents have been ingested. Original error: {exc}"
+            ),
+        ) from exc
+
+
+@app.post("/image/ask", response_model=ImageAskResponse)
+async def ask_image_question(
+    file: Annotated[UploadFile, File(...)],
+    question: Annotated[str, Form(...)],
+    session_id: Annotated[str | None, Form()] = None,
+    k: Annotated[int | None, Form()] = 4,
+    filters: Annotated[str | None, Form()] = None,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    try:
+        user_id = current_user["user_id"]
+        clean_question = question.strip()
+
+        if len(clean_question) < 2:
+            raise ValueError("Question must contain at least 2 characters.")
+
+        parsed_filters = _parse_filters(filters)
+
+        upload_started = perf_counter()
+        image_path = await save_uploaded_image(file)
+        print(f"[timing] image upload/save time: {perf_counter() - upload_started:.3f}s")
+
+        vision_started = perf_counter()
+        image_description = await run_in_threadpool(
+            analyze_image_with_llava,
+            str(image_path),
+            clean_question,
+        )
+        print(f"[timing] llava image analysis time: {perf_counter() - vision_started:.3f}s")
+
+        enhanced_question = (
+            f"User question: {clean_question}\n\n"
+            f"Image description:\n{image_description}\n\n"
+            "Answer using ProFood knowledge and retrieved sources."
+        )
+
+        session = await ensure_chat_session(
+            user_id=user_id,
+            session_id=session_id,
+            title=clean_question,
+        )
+        resolved_session_id = session["id"]
+
+        await add_user_message(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            content=f"{clean_question}\n\n[Image attached for ProFood visual analysis.]",
+        )
+
+        rag_started = perf_counter()
+        rag_response = await run_in_threadpool(
+            ask,
+            question=enhanced_question,
+            k=k,
+            filters=parsed_filters,
+        )
+        print(f"[timing] image-enhanced RAG time: {perf_counter() - rag_started:.3f}s")
+
+        await add_assistant_message(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            content=rag_response["answer"],
+            sources=rag_response.get("sources", []),
+        )
+
+        return {
+            "image_description": image_description,
+            "answer": rag_response["answer"],
+            "sources": rag_response.get("sources", []),
+            "session_id": resolved_session_id,
+        }
+
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ChatSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="Chat session not found") from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Image question answering failed. Check that Ollama is running, "
+                f"{settings.ollama_vision_model} is pulled, and documents have been ingested. "
+                f"Original error: {exc}"
             ),
         ) from exc
 

@@ -6,10 +6,12 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_chat_model: str = "llama3.2"
     ollama_embedding_model: str = "nomic-embed-text"
+    ollama_vision_model: str = "llava:7b"
 
     # Chroma / data
     chroma_dir: str = "./data/chroma"
     pdf_dir: str = "./data/pdfs"
+    image_upload_dir: str = "./data/images"
     collection_name: str = "profood_rag"
 
     # RAG

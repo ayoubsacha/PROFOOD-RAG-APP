@@ -15,6 +15,9 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   sources?: SourceChunk[];
+  imagePreview?: string;
+  imageDescription?: string;
+  showImageDescription?: boolean;
 }
 
 type VoiceRecordingMode = 'dictate' | 'voice-chat';
@@ -33,6 +36,8 @@ export class ChatbotWidgetComponent implements OnInit {
   voiceChatLoading = false;
   sessionsLoading = false;
   question = '';
+  selectedImageFile: File | null = null;
+  selectedImagePreview: string | null = null;
   statusMessage = '';
   recordingMode: VoiceRecordingMode | null = null;
   voiceConversationActive = false;
@@ -41,6 +46,8 @@ export class ChatbotWidgetComponent implements OnInit {
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
   messages: ChatMessage[] = [];
+  private readonly allowedImageTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
+  private readonly maxImageBytes = 5 * 1024 * 1024;
   private readonly silenceThreshold = 0.04;
   private readonly silenceDelayMs = 550;
   private readonly maxIdleRecordingMs = 2500;
@@ -118,6 +125,7 @@ export class ChatbotWidgetComponent implements OnInit {
     if (!this.isOpen) {
       this.abortTextStream();
       this.stopVoiceConversation();
+      this.clearSelectedImage();
 
       if (this.recordingMode === 'dictate') {
         this.stopRecording(false);
@@ -134,6 +142,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.abortTextStream();
     this.stopVoiceConversation();
+    this.clearSelectedImage();
     this.sessionsLoading = true;
 
     this.chatbotService.createSession('New chat').subscribe({
@@ -153,6 +162,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.abortTextStream();
     this.stopVoiceConversation();
+    this.clearSelectedImage();
     this.sessionsLoading = true;
 
     this.chatbotService.getSession(sessionId).subscribe({
@@ -167,6 +177,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.abortTextStream();
     this.stopVoiceConversation();
+    this.clearSelectedImage();
     const sessionId = this.currentSessionId;
     this.sessionsLoading = true;
 
@@ -180,6 +191,52 @@ export class ChatbotWidgetComponent implements OnInit {
       error: (error: unknown) => this.handleSessionError(error),
       complete: () => (this.sessionsLoading = false)
     });
+  }
+
+  submitChat(): void {
+    if (this.selectedImageFile) {
+      this.sendImageMessage();
+      return;
+    }
+
+    this.sendMessage();
+  }
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const imageFile = input.files?.[0] || null;
+
+    input.value = '';
+
+    if (!imageFile) return;
+
+    if (!this.allowedImageTypes.has(imageFile.type)) {
+      this.statusMessage = 'Formats acceptes: PNG, JPG, JPEG ou WEBP.';
+      this.clearSelectedImage();
+      return;
+    }
+
+    if (imageFile.size > this.maxImageBytes) {
+      this.statusMessage = 'Image trop grande. Taille maximale: 5MB.';
+      this.clearSelectedImage();
+      return;
+    }
+
+    this.clearSelectedImage();
+    this.selectedImageFile = imageFile;
+    this.selectedImagePreview = URL.createObjectURL(imageFile);
+    this.statusMessage = '';
+    this.changeDetector.detectChanges();
+  }
+
+  clearSelectedImage(revokePreview = true): void {
+    if (revokePreview && this.selectedImagePreview) {
+      URL.revokeObjectURL(this.selectedImagePreview);
+    }
+
+    this.selectedImageFile = null;
+    this.selectedImagePreview = null;
+    this.changeDetector.detectChanges();
   }
 
   sendMessage(): void {
@@ -265,6 +322,83 @@ export class ChatbotWidgetComponent implements OnInit {
           this.textStreamAbortController = null;
         }
       });
+  }
+
+  sendImageMessage(): void {
+    const imageFile = this.selectedImageFile;
+
+    if (!imageFile) {
+      this.sendMessage();
+      return;
+    }
+
+    if (this.isBusy || this.recordingMode || this.voiceConversationActive) return;
+
+    if (!this.allowedImageTypes.has(imageFile.type) || imageFile.size > this.maxImageBytes) {
+      this.statusMessage = 'Image invalide. Utilisez PNG, JPG, JPEG ou WEBP jusqu a 5MB.';
+      return;
+    }
+
+    if (!this.authService.getToken()) {
+      this.messages.push({
+        role: 'assistant',
+        text: 'Vous devez vous connecter pour utiliser le chatbot ProFood.'
+      });
+
+      return;
+    }
+
+    const cleanQuestion = this.question.trim() || 'Analyse cette image dans le contexte de ProFood.';
+    const previewUrl = this.selectedImagePreview || undefined;
+
+    this.messages.push({
+      role: 'user',
+      text: cleanQuestion,
+      imagePreview: previewUrl
+    });
+
+    this.question = '';
+    this.selectedImageFile = null;
+    this.selectedImagePreview = null;
+    this.loading = true;
+    this.statusMessage = 'Analyse de l image...';
+
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      text: '',
+      sources: [],
+      showImageDescription: false
+    };
+
+    this.messages.push(assistantMessage);
+    this.refreshStreamingView();
+
+    this.chatbotService.askImage(imageFile, cleanQuestion, this.currentSessionId).subscribe({
+      next: (response) => {
+        if (response.session_id) {
+          this.currentSessionId = response.session_id;
+        }
+
+        assistantMessage.text = response.answer;
+        assistantMessage.sources = response.sources || [];
+        assistantMessage.imageDescription = response.image_description;
+        this.statusMessage = '';
+        this.refreshStreamingView();
+      },
+      error: (error: unknown) => {
+        console.error(error);
+        assistantMessage.text =
+          'Desole, l analyse de l image a echoue. Verifiez que FastAPI est lance et que llava:7b est installe dans Ollama.';
+        this.loading = false;
+        this.statusMessage = '';
+        this.refreshStreamingView();
+      },
+      complete: () => {
+        this.loading = false;
+        this.loadSessions();
+        this.refreshStreamingView();
+      }
+    });
   }
 
   toggleDictation(): void {

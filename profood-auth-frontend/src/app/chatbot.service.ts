@@ -18,6 +18,13 @@ export interface AskResponse {
   session_id: string;
 }
 
+export interface ImageAskResponse {
+  image_description: string;
+  answer: string;
+  sources: SourceChunk[];
+  session_id: string | null;
+}
+
 export interface VoiceTranscribeResponse {
   transcript: string;
 }
@@ -82,6 +89,24 @@ export class ChatbotService {
         filters: null,
         session_id: sessionId || null
       },
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  askImage(imageFile: File, question: string, sessionId?: string | null): Observable<ImageAskResponse> {
+    const formData = new FormData();
+
+    formData.append('file', imageFile, imageFile.name);
+    formData.append('question', question);
+    formData.append('k', '4');
+
+    if (sessionId) {
+      formData.append('session_id', sessionId);
+    }
+
+    return this.http.post<ImageAskResponse>(
+      `${this.ragApiUrl}/image/ask`,
+      formData,
       { headers: this.getAuthHeaders() }
     );
   }
