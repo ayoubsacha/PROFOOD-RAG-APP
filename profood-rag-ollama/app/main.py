@@ -38,8 +38,8 @@ from app.schemas import (
     TtsSpeakResponse,
     VoiceTranscribeResponse,
 )
-from app.tts import text_to_speech
-from app.voice import save_uploaded_audio, transcribe_audio
+from app.tts import cleanup_expired_tts_files, text_to_speech
+from app.voice import delete_audio_file, save_uploaded_audio, transcribe_audio
 
 
 app = FastAPI(
@@ -53,6 +53,7 @@ STATIC_DIR = PROJECT_ROOT / "static"
 TTS_STATIC_DIR = _resolve_path(settings.tts_output_dir)
 TTS_STATIC_DIR.mkdir(parents=True, exist_ok=True)
 _resolve_path(settings.audio_upload_dir).mkdir(parents=True, exist_ok=True)
+cleanup_expired_tts_files()
 
 app.mount("/static/tts", StaticFiles(directory=str(TTS_STATIC_DIR)), name="tts_static")
 if STATIC_DIR.exists():
@@ -80,6 +81,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+async def _cleanup_expired_tts_loop() -> None:
+    while True:
+        await asyncio.sleep(max(settings.tts_cleanup_interval_seconds, 60))
+        await run_in_threadpool(cleanup_expired_tts_files)
+
+
+@app.on_event("startup")
+async def start_tts_cleanup_loop() -> None:
+    asyncio.create_task(_cleanup_expired_tts_loop())
 
 
 def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
@@ -504,6 +516,8 @@ async def voice_transcribe(
     file: Annotated[UploadFile, File(...)],
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    audio_path: Path | None = None
+
     try:
         upload_started = perf_counter()
         audio_path = await save_uploaded_audio(file)
@@ -520,6 +534,8 @@ async def voice_transcribe(
             status_code=500,
             detail=f"Voice transcription failed. Original error: {exc}",
         ) from exc
+    finally:
+        await run_in_threadpool(delete_audio_file, audio_path)
 
 
 @app.post("/tts/speak", response_model=TtsSpeakResponse)

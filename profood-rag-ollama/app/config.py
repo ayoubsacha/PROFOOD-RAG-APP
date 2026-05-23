@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     audio_upload_dir: str = "./data/audio"
     tts_output_dir: str = "./data/tts"
     tts_voice: str = "fr-FR-HenriNeural"
+    tts_retention_seconds: int = 86400
+    tts_cleanup_interval_seconds: int = 3600
 
     # CORS
     cors_extra_origins: str = ""
