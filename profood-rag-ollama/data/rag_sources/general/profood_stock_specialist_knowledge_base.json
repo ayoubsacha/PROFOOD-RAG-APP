@@ -1,0 +1,4070 @@
+{
+  "knowledge_base_name": "profood_stock_specialist_knowledge_base",
+  "version": "1.0",
+  "language": "fr",
+  "specialist": {
+    "id": "stock",
+    "display_name": "Spécialiste Stock ProFood",
+    "purpose": "Répondre aux questions sur les produits en stock, catégories, unités, prix indicatifs, disponibilité de référence, fournisseurs/points géographiques et organisation du catalogue.",
+    "recommended_chroma_filter": {
+      "specialist": "stock"
+    }
+  },
+  "source_files": {
+    "produitAssocie": {
+      "file_name": "produitAssocie.json"
+    },
+    "produitService": {
+      "file_name": "produitService.json"
+    },
+    "domain": {
+      "file_name": "domain(14).json"
+    },
+    "taxonomie": {
+      "file_name": "taxonomie(13).json"
+    },
+    "coordonneeGeo": {
+      "file_name": "coordonneeGeo.json"
+    }
+  },
+  "ingestion_recommendation": {
+    "target_folder": "profood-rag-ollama/data/rag_sources/stock/",
+    "metadata_required": {
+      "specialist": "stock",
+      "domain": "stock"
+    },
+    "chunking_note": "Chaque item dans documents peut être ingéré comme un document/chunk autonome, car content est déjà optimisé pour RAG."
+  },
+  "documents": [
+    {
+      "id": "stock_overview_profood",
+      "type": "stock_overview",
+      "title": "Vue générale de la base de connaissances Stock ProFood",
+      "content": "Base de connaissances stock ProFood générée à partir de 60 enregistrements produitAssocie, 0 enregistrements produitService, 137 domaines, 819 taxonomies et 10 coordonnées géographiques. Cette base sert au spécialiste Stock pour répondre aux questions sur les produits disponibles, les catégories, les unités, les prix HT/TTC indicatifs, les points de stock ou fournisseurs, et la structure de classification. Attention: le fichier produitService fourni est vide, donc les références produitService ne sont pas enrichies. Le champ quantiteProduit est conservé comme quantité de référence du produit, pas comme stock réel en entrepôt.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "overview",
+        "source_files": [
+          "produitAssocie.json",
+          "produitService.json",
+          "domain(14).json",
+          "taxonomie(13).json",
+          "coordonneeGeo.json"
+        ],
+        "language": "fr",
+        "doc_type": "knowledge_base_overview"
+      },
+      "structured_data": {
+        "counts": {
+          "product_records": 60,
+          "produit_service_records": 0,
+          "domain_records": 137,
+          "taxonomy_records": 819,
+          "location_records": 10,
+          "generated_documents": 71
+        },
+        "top_categories": {
+          "Agrumes": 3,
+          "Légumes racines & tubercules": 2,
+          "Fruits secs & noix": 2,
+          "Farines & semoules": 2,
+          "Lave-vaisselle à capot professionnel": 2,
+          "Légumes bulbes": 1,
+          "Légumes fruits": 1,
+          "Légumes feuilles": 1,
+          "Herbes aromatiques": 1,
+          "Fruits à pépins": 1,
+          "Fruits tropicaux": 1,
+          "Fruits rouges": 1,
+          "Melons & pastèques": 1,
+          "Poissons frais": 1,
+          "Poissons nobles": 1,
+          "Crustacés": 1,
+          "Viande bovine": 1,
+          "Viande caprine": 1,
+          "Viande de veau": 1,
+          "Huiles alimentaires": 1
+        },
+        "unit_distribution": {
+          "Kilogramme": 18,
+          "Paquet": 2,
+          "Barquette": 1,
+          "Boîte": 1,
+          "Sac": 2,
+          "Bidon": 1,
+          "Pièce": 16,
+          "Lot": 3,
+          "Carton": 1,
+          "Unité": 15
+        },
+        "price_summary": {
+          "min_price_ht_mad": 3.5,
+          "max_price_ht_mad": 38500,
+          "average_price_ht_mad": 3431.99
+        },
+        "data_quality_notes": [
+          "produitService.json is empty, so produitService references from produitAssocie cannot be enriched.",
+          "quantiteProduit is treated as a reference/product quantity, not as a verified warehouse stock level.",
+          "Supplier/location records are included as stock context but are not directly linked to each product unless explicit relations are added later.",
+          "All generated chunks include metadata specialist=stock for Chroma filtering."
+        ],
+        "missing_references": []
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000002",
+      "type": "stock_product_record",
+      "title": "Pomme de terre rouge calibre 45/65 - AgriMaroc Sélection",
+      "content": "Produit stock ProFood: Pomme de terre rouge calibre 45/65 - AgriMaroc Sélection. Description: Pomme de terre rouge calibre 45/65 - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre 45/65, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Légumes racines & tubercules (Légumes). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 7.5 MAD, TVA/taxes associées: 1.5 MAD, remise: 0 MAD, prix indicatif TTC: 9.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000002",
+        "produit_service_id": "700000000000000000000001",
+        "category_id": "1c811f90c9289c866ccf84dd",
+        "category_name": "Légumes racines & tubercules",
+        "category_domain": "Légumes",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000002",
+        "designation": "Pomme de terre rouge calibre 45/65 - AgriMaroc Sélection",
+        "description": "Pomme de terre rouge calibre 45/65 - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre 45/65, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/pomme-de-terre-rouge-calibre-45-65-agrimaroc-s-lection.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 7.5,
+        "discount_mad": 0,
+        "taxes_mad": 1.5,
+        "estimated_price_ttc_mad": 9.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000000d",
+      "type": "stock_product_record",
+      "title": "Oignon jaune moyen 50/70 - AgriMaroc Sélection",
+      "content": "Produit stock ProFood: Oignon jaune moyen 50/70 - AgriMaroc Sélection. Description: Oignon jaune moyen 50/70 - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre 50/70, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Légumes bulbes (Légumes). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 6.8 MAD, TVA/taxes associées: 1.36 MAD, remise: 0 MAD, prix indicatif TTC: 8.16 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000000d",
+        "produit_service_id": "70000000000000000000000c",
+        "category_id": "8b83a0d823871aa0b1aac493",
+        "category_name": "Légumes bulbes",
+        "category_domain": "Légumes",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000000d",
+        "designation": "Oignon jaune moyen 50/70 - AgriMaroc Sélection",
+        "description": "Oignon jaune moyen 50/70 - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre 50/70, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/oignon-jaune-moyen-50-70-agrimaroc-s-lection.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 6.8,
+        "discount_mad": 0,
+        "taxes_mad": 1.36,
+        "estimated_price_ttc_mad": 8.16,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000018",
+      "type": "stock_product_record",
+      "title": "Tomate ronde rouge calibre M - AgriMaroc Primeur",
+      "content": "Produit stock ProFood: Tomate ronde rouge calibre M - AgriMaroc Primeur. Description: Tomate ronde rouge calibre M - AgriMaroc Primeur. Produit alimentaire B2B avec origine Maroc, calibre M, qualité extra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Légumes fruits (Légumes). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 8.5 MAD, TVA/taxes associées: 1.7 MAD, remise: 0 MAD, prix indicatif TTC: 10.2 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000018",
+        "produit_service_id": "700000000000000000000017",
+        "category_id": "5081b81240dd9efb0c16165f",
+        "category_name": "Légumes fruits",
+        "category_domain": "Légumes",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000018",
+        "designation": "Tomate ronde rouge calibre M - AgriMaroc Primeur",
+        "description": "Tomate ronde rouge calibre M - AgriMaroc Primeur. Produit alimentaire B2B avec origine Maroc, calibre M, qualité extra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/tomate-ronde-rouge-calibre-m-agrimaroc-primeur.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 8.5,
+        "discount_mad": 0,
+        "taxes_mad": 1.7,
+        "estimated_price_ttc_mad": 10.2,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000023",
+      "type": "stock_product_record",
+      "title": "Épinards frais en botte - AgriMaroc Fraîcheur",
+      "content": "Produit stock ProFood: Épinards frais en botte - AgriMaroc Fraîcheur. Description: Épinards frais en botte - AgriMaroc Fraîcheur. Produit alimentaire B2B avec origine Maroc, botte fraîche, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Légumes feuilles (Légumes). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 14.0 MAD, TVA/taxes associées: 2.8 MAD, remise: 0 MAD, prix indicatif TTC: 16.8 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000023",
+        "produit_service_id": "700000000000000000000022",
+        "category_id": "3f62a60122894b8d20b9732e",
+        "category_name": "Légumes feuilles",
+        "category_domain": "Légumes",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000023",
+        "designation": "Épinards frais en botte - AgriMaroc Fraîcheur",
+        "description": "Épinards frais en botte - AgriMaroc Fraîcheur. Produit alimentaire B2B avec origine Maroc, botte fraîche, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/pinards-frais-en-botte-agrimaroc-fra-cheur.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 14.0,
+        "discount_mad": 0,
+        "taxes_mad": 2.8,
+        "estimated_price_ttc_mad": 16.8,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000002e",
+      "type": "stock_product_record",
+      "title": "Persil plat frais botte 250g - AgriMaroc Herbes",
+      "content": "Produit stock ProFood: Persil plat frais botte 250g - AgriMaroc Herbes. Description: Persil plat frais botte 250g - AgriMaroc Herbes. Produit alimentaire B2B avec origine Maroc, botte 250g, qualité extra frais. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Herbes aromatiques (Légumes). Unité: Paquet. Quantité de référence: 1. Prix HT: 3.5 MAD, TVA/taxes associées: 0.7 MAD, remise: 0 MAD, prix indicatif TTC: 4.2 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000002e",
+        "produit_service_id": "70000000000000000000002d",
+        "category_id": "d757e043ed5f8c69f03de391",
+        "category_name": "Herbes aromatiques",
+        "category_domain": "Légumes",
+        "unit_id": "66ac9ddc5b0271bef8988ff5",
+        "unit_name": "Paquet",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000002e",
+        "designation": "Persil plat frais botte 250g - AgriMaroc Herbes",
+        "description": "Persil plat frais botte 250g - AgriMaroc Herbes. Produit alimentaire B2B avec origine Maroc, botte 250g, qualité extra frais. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/persil-plat-frais-botte-250g-agrimaroc-herbes.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ac9ddc5b0271bef8988ff5",
+          "designation": "Paquet",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 3.5,
+        "discount_mad": 0,
+        "taxes_mad": 0.7,
+        "estimated_price_ttc_mad": 4.2,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000039",
+      "type": "stock_product_record",
+      "title": "Orange de table Maroc Late calibre 3 - AgriMaroc Agrumes",
+      "content": "Produit stock ProFood: Orange de table Maroc Late calibre 3 - AgriMaroc Agrumes. Description: Orange de table Maroc Late calibre 3 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 3, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Agrumes (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 6.5 MAD, TVA/taxes associées: 1.3 MAD, remise: 0 MAD, prix indicatif TTC: 7.8 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000039",
+        "produit_service_id": "700000000000000000000038",
+        "category_id": "65dc780f7e3b4fd762edeb32",
+        "category_name": "Agrumes",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000039",
+        "designation": "Orange de table Maroc Late calibre 3 - AgriMaroc Agrumes",
+        "description": "Orange de table Maroc Late calibre 3 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 3, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/orange-de-table-maroc-late-calibre-3-agrimaroc-agrumes.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 6.5,
+        "discount_mad": 0,
+        "taxes_mad": 1.3,
+        "estimated_price_ttc_mad": 7.8,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000044",
+      "type": "stock_product_record",
+      "title": "Pomme rouge Gala calibre 70/75 - AgriMaroc Fruits",
+      "content": "Produit stock ProFood: Pomme rouge Gala calibre 70/75 - AgriMaroc Fruits. Description: Pomme rouge Gala calibre 70/75 - AgriMaroc Fruits. Produit alimentaire B2B avec origine Maroc, calibre 70/75, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Fruits à pépins (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 13.0 MAD, TVA/taxes associées: 2.6 MAD, remise: 0 MAD, prix indicatif TTC: 15.6 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000044",
+        "produit_service_id": "700000000000000000000043",
+        "category_id": "ad8e755e25d2d943154af692",
+        "category_name": "Fruits à pépins",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000044",
+        "designation": "Pomme rouge Gala calibre 70/75 - AgriMaroc Fruits",
+        "description": "Pomme rouge Gala calibre 70/75 - AgriMaroc Fruits. Produit alimentaire B2B avec origine Maroc, calibre 70/75, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/pomme-rouge-gala-calibre-70-75-agrimaroc-fruits.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 13.0,
+        "discount_mad": 0,
+        "taxes_mad": 2.6,
+        "estimated_price_ttc_mad": 15.6,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000004f",
+      "type": "stock_product_record",
+      "title": "Banane Cavendish carton 18kg - AgriMaroc Import",
+      "content": "Produit stock ProFood: Banane Cavendish carton 18kg - AgriMaroc Import. Description: Banane Cavendish carton 18kg - AgriMaroc Import. Produit alimentaire B2B avec origine Équateur, carton 18kg, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Fruits tropicaux (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 12.5 MAD, TVA/taxes associées: 2.5 MAD, remise: 0 MAD, prix indicatif TTC: 15.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000004f",
+        "produit_service_id": "70000000000000000000004e",
+        "category_id": "3e503964640ab6c17e10dcb7",
+        "category_name": "Fruits tropicaux",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000004f",
+        "designation": "Banane Cavendish carton 18kg - AgriMaroc Import",
+        "description": "Banane Cavendish carton 18kg - AgriMaroc Import. Produit alimentaire B2B avec origine Équateur, carton 18kg, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/banane-cavendish-carton-18kg-agrimaroc-import.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 12.5,
+        "discount_mad": 0,
+        "taxes_mad": 2.5,
+        "estimated_price_ttc_mad": 15.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000005a",
+      "type": "stock_product_record",
+      "title": "Fraise fraîche barquette 500g - AgriMaroc Fruits rouges",
+      "content": "Produit stock ProFood: Fraise fraîche barquette 500g - AgriMaroc Fruits rouges. Description: Fraise fraîche barquette 500g - AgriMaroc Fruits rouges. Produit alimentaire B2B avec origine Maroc, barquette 500g, qualité extra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Fruits rouges (Fruits). Unité: Barquette. Quantité de référence: 1. Prix HT: 18.0 MAD, TVA/taxes associées: 3.6 MAD, remise: 0 MAD, prix indicatif TTC: 21.6 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000005a",
+        "produit_service_id": "700000000000000000000059",
+        "category_id": "b54a3a522204af857901b709",
+        "category_name": "Fruits rouges",
+        "category_domain": "Fruits",
+        "unit_id": "66512578a4e2d324a7cac3d5",
+        "unit_name": "Barquette",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000005a",
+        "designation": "Fraise fraîche barquette 500g - AgriMaroc Fruits rouges",
+        "description": "Fraise fraîche barquette 500g - AgriMaroc Fruits rouges. Produit alimentaire B2B avec origine Maroc, barquette 500g, qualité extra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/fraise-fra-che-barquette-500g-agrimaroc-fruits-rouges.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66512578a4e2d324a7cac3d5",
+          "designation": "Barquette",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 18.0,
+        "discount_mad": 0,
+        "taxes_mad": 3.6,
+        "estimated_price_ttc_mad": 21.6,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000065",
+      "type": "stock_product_record",
+      "title": "Pastèque ronde calibre 6/8 kg - AgriMaroc Été",
+      "content": "Produit stock ProFood: Pastèque ronde calibre 6/8 kg - AgriMaroc Été. Description: Pastèque ronde calibre 6/8 kg - AgriMaroc Été. Produit alimentaire B2B avec origine Maroc, 6/8 kg, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Melons & pastèques (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 4.2 MAD, TVA/taxes associées: 0.84 MAD, remise: 0 MAD, prix indicatif TTC: 5.04 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000065",
+        "produit_service_id": "700000000000000000000064",
+        "category_id": "194845377bf1940efb6010ba",
+        "category_name": "Melons & pastèques",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000065",
+        "designation": "Pastèque ronde calibre 6/8 kg - AgriMaroc Été",
+        "description": "Pastèque ronde calibre 6/8 kg - AgriMaroc Été. Produit alimentaire B2B avec origine Maroc, 6/8 kg, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/past-que-ronde-calibre-6-8-kg-agrimaroc-t.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 4.2,
+        "discount_mad": 0,
+        "taxes_mad": 0.84,
+        "estimated_price_ttc_mad": 5.04,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000070",
+      "type": "stock_product_record",
+      "title": "Dattes Medjool premium 1kg - Épices & Saveurs Tanger",
+      "content": "Produit stock ProFood: Dattes Medjool premium 1kg - Épices & Saveurs Tanger. Description: Dattes Medjool premium 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Maroc, boîte 1kg, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Fruits secs & noix (Fruits). Unité: Boîte. Quantité de référence: 1. Prix HT: 65.0 MAD, TVA/taxes associées: 13.0 MAD, remise: 0 MAD, prix indicatif TTC: 78.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000070",
+        "produit_service_id": "70000000000000000000006f",
+        "category_id": "2e182e47038fced6a5ca1eae",
+        "category_name": "Fruits secs & noix",
+        "category_domain": "Fruits",
+        "unit_id": "66699ebec7c4f1e51c328e35",
+        "unit_name": "Boîte",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000070",
+        "designation": "Dattes Medjool premium 1kg - Épices & Saveurs Tanger",
+        "description": "Dattes Medjool premium 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Maroc, boîte 1kg, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/dattes-medjool-premium-1kg-pices-saveurs-tanger.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66699ebec7c4f1e51c328e35",
+          "designation": "Boîte",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 65.0,
+        "discount_mad": 0,
+        "taxes_mad": 13.0,
+        "estimated_price_ttc_mad": 78.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000007b",
+      "type": "stock_product_record",
+      "title": "Amande décortiquée blanche 1kg - Épices & Saveurs Tanger",
+      "content": "Produit stock ProFood: Amande décortiquée blanche 1kg - Épices & Saveurs Tanger. Description: Amande décortiquée blanche 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Maroc, sachet 1kg, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Fruits secs & noix (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 78.0 MAD, TVA/taxes associées: 15.6 MAD, remise: 0 MAD, prix indicatif TTC: 93.6 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000007b",
+        "produit_service_id": "70000000000000000000007a",
+        "category_id": "2e182e47038fced6a5ca1eae",
+        "category_name": "Fruits secs & noix",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000007b",
+        "designation": "Amande décortiquée blanche 1kg - Épices & Saveurs Tanger",
+        "description": "Amande décortiquée blanche 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Maroc, sachet 1kg, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/amande-d-cortiqu-e-blanche-1kg-pices-saveurs-tanger.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 78.0,
+        "discount_mad": 0,
+        "taxes_mad": 15.6,
+        "estimated_price_ttc_mad": 93.6,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000086",
+      "type": "stock_product_record",
+      "title": "Sardine fraîche caisse 10kg - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Sardine fraîche caisse 10kg - Viandes Select Maroc. Description: Sardine fraîche caisse 10kg - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, caisse 10kg, qualité ultra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Poissons frais (Poissons & fruits de mer). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 16.0 MAD, TVA/taxes associées: 3.2 MAD, remise: 0 MAD, prix indicatif TTC: 19.2 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000086",
+        "produit_service_id": "700000000000000000000085",
+        "category_id": "e62e4014e4dd9565b10da4d0",
+        "category_name": "Poissons frais",
+        "category_domain": "Poissons & fruits de mer",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000086",
+        "designation": "Sardine fraîche caisse 10kg - Viandes Select Maroc",
+        "description": "Sardine fraîche caisse 10kg - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, caisse 10kg, qualité ultra fraîche. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/sardine-fra-che-caisse-10kg-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 16.0,
+        "discount_mad": 0,
+        "taxes_mad": 3.2,
+        "estimated_price_ttc_mad": 19.2,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000091",
+      "type": "stock_product_record",
+      "title": "Saumon frais filet premium - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Saumon frais filet premium - Viandes Select Maroc. Description: Saumon frais filet premium - Viandes Select Maroc. Produit alimentaire B2B avec origine Norvège, filet entier, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Poissons nobles (Poissons & fruits de mer). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 165.0 MAD, TVA/taxes associées: 33.0 MAD, remise: 0 MAD, prix indicatif TTC: 198.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000091",
+        "produit_service_id": "700000000000000000000090",
+        "category_id": "92d32bc6e87f4ade0cdcc2dd",
+        "category_name": "Poissons nobles",
+        "category_domain": "Poissons & fruits de mer",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000091",
+        "designation": "Saumon frais filet premium - Viandes Select Maroc",
+        "description": "Saumon frais filet premium - Viandes Select Maroc. Produit alimentaire B2B avec origine Norvège, filet entier, qualité premium. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/saumon-frais-filet-premium-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 165.0,
+        "discount_mad": 0,
+        "taxes_mad": 33.0,
+        "estimated_price_ttc_mad": 198.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000009c",
+      "type": "stock_product_record",
+      "title": "Crevettes roses fraîches calibre 40/60 - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Crevettes roses fraîches calibre 40/60 - Viandes Select Maroc. Description: Crevettes roses fraîches calibre 40/60 - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, calibre 40/60, qualité fraîches. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Crustacés (Poissons & fruits de mer). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 95.0 MAD, TVA/taxes associées: 19.0 MAD, remise: 0 MAD, prix indicatif TTC: 114.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000009c",
+        "produit_service_id": "70000000000000000000009b",
+        "category_id": "c4d1e8536f0ecd609e2f32ca",
+        "category_name": "Crustacés",
+        "category_domain": "Poissons & fruits de mer",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000009c",
+        "designation": "Crevettes roses fraîches calibre 40/60 - Viandes Select Maroc",
+        "description": "Crevettes roses fraîches calibre 40/60 - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, calibre 40/60, qualité fraîches. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/crevettes-roses-fra-ches-calibre-40-60-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 95.0,
+        "discount_mad": 0,
+        "taxes_mad": 19.0,
+        "estimated_price_ttc_mad": 114.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000a7",
+      "type": "stock_product_record",
+      "title": "Bœuf haché halal 15% MG - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Bœuf haché halal 15% MG - Viandes Select Maroc. Description: Bœuf haché halal 15% MG - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, 15% MG, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Viande bovine (Viandes & volailles). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 72.0 MAD, TVA/taxes associées: 14.4 MAD, remise: 0 MAD, prix indicatif TTC: 86.4 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000a7",
+        "produit_service_id": "7000000000000000000000a6",
+        "category_id": "44e99ed3c687c7ddad1c127a",
+        "category_name": "Viande bovine",
+        "category_domain": "Viandes & volailles",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000a7",
+        "designation": "Bœuf haché halal 15% MG - Viandes Select Maroc",
+        "description": "Bœuf haché halal 15% MG - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, 15% MG, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/b-uf-hach-halal-15-mg-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 72.0,
+        "discount_mad": 0,
+        "taxes_mad": 14.4,
+        "estimated_price_ttc_mad": 86.4,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000b2",
+      "type": "stock_product_record",
+      "title": "Gigot d’agneau halal coupe boucherie - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Gigot d’agneau halal coupe boucherie - Viandes Select Maroc. Description: Gigot d’agneau halal coupe boucherie - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, pièce 2/3 kg, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Viande caprine (Viandes & volailles). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 115.0 MAD, TVA/taxes associées: 23.0 MAD, remise: 0 MAD, prix indicatif TTC: 138.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000b2",
+        "produit_service_id": "7000000000000000000000b1",
+        "category_id": "c98eeebd1d516c453426f72e",
+        "category_name": "Viande caprine",
+        "category_domain": "Viandes & volailles",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000b2",
+        "designation": "Gigot d’agneau halal coupe boucherie - Viandes Select Maroc",
+        "description": "Gigot d’agneau halal coupe boucherie - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, pièce 2/3 kg, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/gigot-d-agneau-halal-coupe-boucherie-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 115.0,
+        "discount_mad": 0,
+        "taxes_mad": 23.0,
+        "estimated_price_ttc_mad": 138.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000bd",
+      "type": "stock_product_record",
+      "title": "Escalope de veau halal sous vide - Viandes Select Maroc",
+      "content": "Produit stock ProFood: Escalope de veau halal sous vide - Viandes Select Maroc. Description: Escalope de veau halal sous vide - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, sous vide, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Viande de veau (Viandes & volailles). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 128.0 MAD, TVA/taxes associées: 25.6 MAD, remise: 0 MAD, prix indicatif TTC: 153.6 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000bd",
+        "produit_service_id": "7000000000000000000000bc",
+        "category_id": "c87cb0f7a922b23ba8eaaca6",
+        "category_name": "Viande de veau",
+        "category_domain": "Viandes & volailles",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000bd",
+        "designation": "Escalope de veau halal sous vide - Viandes Select Maroc",
+        "description": "Escalope de veau halal sous vide - Viandes Select Maroc. Produit alimentaire B2B avec origine Maroc, sous vide, qualité halal. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/escalope-de-veau-halal-sous-vide-viandes-select-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 128.0,
+        "discount_mad": 0,
+        "taxes_mad": 25.6,
+        "estimated_price_ttc_mad": 153.6,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000c8",
+      "type": "stock_product_record",
+      "title": "Farine blanche T55 sac 25kg - Moulin Atlas Farine",
+      "content": "Produit stock ProFood: Farine blanche T55 sac 25kg - Moulin Atlas Farine. Description: Farine blanche T55 sac 25kg - Moulin Atlas Farine. Produit alimentaire B2B avec origine Maroc, sac 25kg, qualité T55. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Farines & semoules (Produits secs & épicerie professionnelle). Unité: Sac. Quantité de référence: 1. Prix HT: 105.0 MAD, TVA/taxes associées: 21.0 MAD, remise: 0 MAD, prix indicatif TTC: 126.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000c8",
+        "produit_service_id": "7000000000000000000000c7",
+        "category_id": "615a3a209e1e033138937419",
+        "category_name": "Farines & semoules",
+        "category_domain": "Produits secs & épicerie professionnelle",
+        "unit_id": "66d110b0247aa3e1631b341a",
+        "unit_name": "Sac",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000c8",
+        "designation": "Farine blanche T55 sac 25kg - Moulin Atlas Farine",
+        "description": "Farine blanche T55 sac 25kg - Moulin Atlas Farine. Produit alimentaire B2B avec origine Maroc, sac 25kg, qualité T55. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/farine-blanche-t55-sac-25kg-moulin-atlas-farine.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66d110b0247aa3e1631b341a",
+          "designation": "Sac",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 105.0,
+        "discount_mad": 0,
+        "taxes_mad": 21.0,
+        "estimated_price_ttc_mad": 126.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000d3",
+      "type": "stock_product_record",
+      "title": "Semoule fine sac 25kg - Moulin Atlas Farine",
+      "content": "Produit stock ProFood: Semoule fine sac 25kg - Moulin Atlas Farine. Description: Semoule fine sac 25kg - Moulin Atlas Farine. Produit alimentaire B2B avec origine Maroc, sac 25kg, qualité fine. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Farines & semoules (Produits secs & épicerie professionnelle). Unité: Sac. Quantité de référence: 1. Prix HT: 125.0 MAD, TVA/taxes associées: 25.0 MAD, remise: 0 MAD, prix indicatif TTC: 150.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000d3",
+        "produit_service_id": "7000000000000000000000d2",
+        "category_id": "615a3a209e1e033138937419",
+        "category_name": "Farines & semoules",
+        "category_domain": "Produits secs & épicerie professionnelle",
+        "unit_id": "66d110b0247aa3e1631b341a",
+        "unit_name": "Sac",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000d3",
+        "designation": "Semoule fine sac 25kg - Moulin Atlas Farine",
+        "description": "Semoule fine sac 25kg - Moulin Atlas Farine. Produit alimentaire B2B avec origine Maroc, sac 25kg, qualité fine. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/semoule-fine-sac-25kg-moulin-atlas-farine.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66d110b0247aa3e1631b341a",
+          "designation": "Sac",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 125.0,
+        "discount_mad": 0,
+        "taxes_mad": 25.0,
+        "estimated_price_ttc_mad": 150.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000de",
+      "type": "stock_product_record",
+      "title": "Huile de tournesol bidon 5L - Huile Oléa Maroc",
+      "content": "Produit stock ProFood: Huile de tournesol bidon 5L - Huile Oléa Maroc. Description: Huile de tournesol bidon 5L - Huile Oléa Maroc. Produit alimentaire B2B avec origine Maroc, bidon 5L, qualité raffinée. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Huiles alimentaires (Huiles & matières grasses). Unité: Bidon. Quantité de référence: 1. Prix HT: 85.0 MAD, TVA/taxes associées: 17.0 MAD, remise: 0 MAD, prix indicatif TTC: 102.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000de",
+        "produit_service_id": "7000000000000000000000dd",
+        "category_id": "b20d1c6ecfbaa52a38449b0d",
+        "category_name": "Huiles alimentaires",
+        "category_domain": "Huiles & matières grasses",
+        "unit_id": "66f859f6c14f70985c8414f0",
+        "unit_name": "Bidon",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000de",
+        "designation": "Huile de tournesol bidon 5L - Huile Oléa Maroc",
+        "description": "Huile de tournesol bidon 5L - Huile Oléa Maroc. Produit alimentaire B2B avec origine Maroc, bidon 5L, qualité raffinée. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/huile-de-tournesol-bidon-5l-huile-ol-a-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66f859f6c14f70985c8414f0",
+          "designation": "Bidon",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 85.0,
+        "discount_mad": 0,
+        "taxes_mad": 17.0,
+        "estimated_price_ttc_mad": 102.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000e9",
+      "type": "stock_product_record",
+      "title": "Orange de table Navel calibre 4 - AgriMaroc Agrumes",
+      "content": "Produit stock ProFood: Orange de table Navel calibre 4 - AgriMaroc Agrumes. Description: Orange de table Navel calibre 4 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 4, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Agrumes (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 7.2 MAD, TVA/taxes associées: 1.44 MAD, remise: 0 MAD, prix indicatif TTC: 8.64 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000e9",
+        "produit_service_id": "7000000000000000000000e8",
+        "category_id": "65dc780f7e3b4fd762edeb32",
+        "category_name": "Agrumes",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000e9",
+        "designation": "Orange de table Navel calibre 4 - AgriMaroc Agrumes",
+        "description": "Orange de table Navel calibre 4 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 4, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/orange-de-table-navel-calibre-4-agrimaroc-agrumes.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 7.2,
+        "discount_mad": 0,
+        "taxes_mad": 1.44,
+        "estimated_price_ttc_mad": 8.64,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000f4",
+      "type": "stock_product_record",
+      "title": "Patate douce orange calibre M - AgriMaroc Sélection",
+      "content": "Produit stock ProFood: Patate douce orange calibre M - AgriMaroc Sélection. Description: Patate douce orange calibre M - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre M, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Légumes racines & tubercules (Légumes). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 11.0 MAD, TVA/taxes associées: 2.2 MAD, remise: 0 MAD, prix indicatif TTC: 13.2 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000f4",
+        "produit_service_id": "7000000000000000000000f3",
+        "category_id": "1c811f90c9289c866ccf84dd",
+        "category_name": "Légumes racines & tubercules",
+        "category_domain": "Légumes",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000f4",
+        "designation": "Patate douce orange calibre M - AgriMaroc Sélection",
+        "description": "Patate douce orange calibre M - AgriMaroc Sélection. Produit alimentaire B2B avec origine Maroc, calibre M, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/patate-douce-orange-calibre-m-agrimaroc-s-lection.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 11.0,
+        "discount_mad": 0,
+        "taxes_mad": 2.2,
+        "estimated_price_ttc_mad": 13.2,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000000ff",
+      "type": "stock_product_record",
+      "title": "Thé vert gunpowder paquet 1kg - Épices & Saveurs Tanger",
+      "content": "Produit stock ProFood: Thé vert gunpowder paquet 1kg - Épices & Saveurs Tanger. Description: Thé vert gunpowder paquet 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Chine, paquet 1kg, qualité gunpowder. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Thé (Boissons chaudes). Unité: Paquet. Quantité de référence: 1. Prix HT: 48.0 MAD, TVA/taxes associées: 9.6 MAD, remise: 0 MAD, prix indicatif TTC: 57.6 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000000ff",
+        "produit_service_id": "7000000000000000000000fe",
+        "category_id": "bcc0c9e505ce85163950f1e6",
+        "category_name": "Thé",
+        "category_domain": "Boissons chaudes",
+        "unit_id": "66ac9ddc5b0271bef8988ff5",
+        "unit_name": "Paquet",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000000ff",
+        "designation": "Thé vert gunpowder paquet 1kg - Épices & Saveurs Tanger",
+        "description": "Thé vert gunpowder paquet 1kg - Épices & Saveurs Tanger. Produit alimentaire B2B avec origine Chine, paquet 1kg, qualité gunpowder. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/th-vert-gunpowder-paquet-1kg-pices-saveurs-tanger.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ac9ddc5b0271bef8988ff5",
+          "designation": "Paquet",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 48.0,
+        "discount_mad": 0,
+        "taxes_mad": 9.6,
+        "estimated_price_ttc_mad": 57.6,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000010a",
+      "type": "stock_product_record",
+      "title": "Citron jaune calibre 4 - AgriMaroc Agrumes",
+      "content": "Produit stock ProFood: Citron jaune calibre 4 - AgriMaroc Agrumes. Description: Citron jaune calibre 4 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 4, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs. Catégorie: Agrumes (Fruits). Unité: Kilogramme. Quantité de référence: 1. Prix HT: 9.5 MAD, TVA/taxes associées: 1.9 MAD, remise: 0 MAD, prix indicatif TTC: 11.4 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000010a",
+        "produit_service_id": "700000000000000000000109",
+        "category_id": "65dc780f7e3b4fd762edeb32",
+        "category_name": "Agrumes",
+        "category_domain": "Fruits",
+        "unit_id": "66ec672438f42cf26c49e091",
+        "unit_name": "Kilogramme",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000010a",
+        "designation": "Citron jaune calibre 4 - AgriMaroc Agrumes",
+        "description": "Citron jaune calibre 4 - AgriMaroc Agrumes. Produit alimentaire B2B avec origine Maroc, calibre 4, qualité catégorie I. Sélection adapté aux restaurants, hôtels, boulangeries et traiteurs.",
+        "photo": "images/produit-service/produits-alimentaires/citron-jaune-calibre-4-agrimaroc-agrumes.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66ec672438f42cf26c49e091",
+          "designation": "Kilogramme",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 9.5,
+        "discount_mad": 0,
+        "taxes_mad": 1.9,
+        "estimated_price_ttc_mad": 11.4,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000115",
+      "type": "stock_product_record",
+      "title": "Bain-marie gaz GN 1/1 3 bacs - MCP Inox Pro",
+      "content": "Produit stock ProFood: Bain-marie gaz GN 1/1 3 bacs - MCP Inox Pro. Description: Bain-marie gaz GN 1/1 3 bacs - MCP Inox Pro. Équipement professionnel robuste avec caractéristique principale GN 1/1, finition inox 304. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Bain-marie électrique / gaz (Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 4200 MAD, TVA/taxes associées: 840.0 MAD, remise: 0 MAD, prix indicatif TTC: 5040.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000115",
+        "produit_service_id": "700000000000000000000114",
+        "category_id": "15c5b8b46bb7806cb7609f02",
+        "category_name": "Bain-marie électrique / gaz",
+        "category_domain": "Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000115",
+        "designation": "Bain-marie gaz GN 1/1 3 bacs - MCP Inox Pro",
+        "description": "Bain-marie gaz GN 1/1 3 bacs - MCP Inox Pro. Équipement professionnel robuste avec caractéristique principale GN 1/1, finition inox 304. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/bain-marie-gaz-gn-1-1-3-bacs-mcp-inox-pro.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 4200,
+        "discount_mad": 0,
+        "taxes_mad": 840.0,
+        "estimated_price_ttc_mad": 5040.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000121",
+      "type": "stock_product_record",
+      "title": "Grill portugais charbon inox 80cm - PROMATEQ GrillPro",
+      "content": "Produit stock ProFood: Grill portugais charbon inox 80cm - PROMATEQ GrillPro. Description: Grill portugais charbon inox 80cm - PROMATEQ GrillPro. Équipement professionnel robuste avec caractéristique principale 80 cm, finition inox renforcé. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Barbecue & Grill portugais (Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 6800 MAD, TVA/taxes associées: 1360.0 MAD, remise: 0 MAD, prix indicatif TTC: 8160.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000121",
+        "produit_service_id": "700000000000000000000120",
+        "category_id": "c27e5e7c6be59e33b092f8b5",
+        "category_name": "Barbecue & Grill portugais",
+        "category_domain": "Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000121",
+        "designation": "Grill portugais charbon inox 80cm - PROMATEQ GrillPro",
+        "description": "Grill portugais charbon inox 80cm - PROMATEQ GrillPro. Équipement professionnel robuste avec caractéristique principale 80 cm, finition inox renforcé. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/grill-portugais-charbon-inox-80cm-promateq-grillpro.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 6800,
+        "discount_mad": 0,
+        "taxes_mad": 1360.0,
+        "estimated_price_ttc_mad": 8160.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000012d",
+      "type": "stock_product_record",
+      "title": "Bain-marie de service buffet 4 bacs GN - Resto Concept",
+      "content": "Produit stock ProFood: Bain-marie de service buffet 4 bacs GN - Resto Concept. Description: Bain-marie de service buffet 4 bacs GN - Resto Concept. Équipement professionnel robuste avec caractéristique principale 4 bacs GN, finition service buffet. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Buffet chauffant / bain-marie de service (Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 5200 MAD, TVA/taxes associées: 1040.0 MAD, remise: 0 MAD, prix indicatif TTC: 6240.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000012d",
+        "produit_service_id": "70000000000000000000012c",
+        "category_id": "2a8d38511cbd06e667afc074",
+        "category_name": "Buffet chauffant / bain-marie de service",
+        "category_domain": "Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000012d",
+        "designation": "Bain-marie de service buffet 4 bacs GN - Resto Concept",
+        "description": "Bain-marie de service buffet 4 bacs GN - Resto Concept. Équipement professionnel robuste avec caractéristique principale 4 bacs GN, finition service buffet. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/bain-marie-de-service-buffet-4-bacs-gn-resto-concept.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 5200,
+        "discount_mad": 0,
+        "taxes_mad": 1040.0,
+        "estimated_price_ttc_mad": 6240.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000139",
+      "type": "stock_product_record",
+      "title": "Lave-vaisselle à capot 400V 50 paniers/h - Italia Machines",
+      "content": "Produit stock ProFood: Lave-vaisselle à capot 400V 50 paniers/h - Italia Machines. Description: Lave-vaisselle à capot 400V 50 paniers/h - Italia Machines. Équipement professionnel robuste avec caractéristique principale 50 paniers/h, finition inox 304. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Lave-vaisselle à capot professionnel (Lavage). Unité: Pièce. Quantité de référence: 1. Prix HT: 38500 MAD, TVA/taxes associées: 7700.0 MAD, remise: 0 MAD, prix indicatif TTC: 46200.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000139",
+        "produit_service_id": "700000000000000000000138",
+        "category_id": "082b28afd02f20417cd82389",
+        "category_name": "Lave-vaisselle à capot professionnel",
+        "category_domain": "Lavage",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000139",
+        "designation": "Lave-vaisselle à capot 400V 50 paniers/h - Italia Machines",
+        "description": "Lave-vaisselle à capot 400V 50 paniers/h - Italia Machines. Équipement professionnel robuste avec caractéristique principale 50 paniers/h, finition inox 304. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/lave-vaisselle-capot-400v-50-paniers-h-italia-machines.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 38500,
+        "discount_mad": 0,
+        "taxes_mad": 7700.0,
+        "estimated_price_ttc_mad": 46200.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000145",
+      "type": "stock_product_record",
+      "title": "Robot pâtissier planétaire 20L - Italia Machines",
+      "content": "Produit stock ProFood: Robot pâtissier planétaire 20L - Italia Machines. Description: Robot pâtissier planétaire 20L - Italia Machines. Équipement professionnel robuste avec caractéristique principale cuve 20L, finition pâtisserie. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Robot pâtissier multifonction (Pâtisserie). Unité: Pièce. Quantité de référence: 1. Prix HT: 17800 MAD, TVA/taxes associées: 3560.0 MAD, remise: 0 MAD, prix indicatif TTC: 21360.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000145",
+        "produit_service_id": "700000000000000000000144",
+        "category_id": "05177a768cb2db06ca3c4099",
+        "category_name": "Robot pâtissier multifonction",
+        "category_domain": "Pâtisserie",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000145",
+        "designation": "Robot pâtissier planétaire 20L - Italia Machines",
+        "description": "Robot pâtissier planétaire 20L - Italia Machines. Équipement professionnel robuste avec caractéristique principale cuve 20L, finition pâtisserie. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/robot-p-tissier-plan-taire-20l-italia-machines.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 17800,
+        "discount_mad": 0,
+        "taxes_mad": 3560.0,
+        "estimated_price_ttc_mad": 21360.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000151",
+      "type": "stock_product_record",
+      "title": "Table de débarrassage inox avec trou déchets 180cm - RESTOQUIP",
+      "content": "Produit stock ProFood: Table de débarrassage inox avec trou déchets 180cm - RESTOQUIP. Description: Table de débarrassage inox avec trou déchets 180cm - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 180 cm, finition inox 304. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Table de débarrassage / plonge (Mobilier Cuisine). Unité: Pièce. Quantité de référence: 1. Prix HT: 4900 MAD, TVA/taxes associées: 980.0 MAD, remise: 0 MAD, prix indicatif TTC: 5880.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000151",
+        "produit_service_id": "700000000000000000000150",
+        "category_id": "c01390bc6fcc8351bde9426a",
+        "category_name": "Table de débarrassage / plonge",
+        "category_domain": "Mobilier Cuisine",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000151",
+        "designation": "Table de débarrassage inox avec trou déchets 180cm - RESTOQUIP",
+        "description": "Table de débarrassage inox avec trou déchets 180cm - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 180 cm, finition inox 304. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/table-de-d-barrassage-inox-avec-trou-d-chets-180cm-restoquip.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 4900,
+        "discount_mad": 0,
+        "taxes_mad": 980.0,
+        "estimated_price_ttc_mad": 5880.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000015d",
+      "type": "stock_product_record",
+      "title": "Friteuse professionnelle gaz double cuve 2x12L - PROMATEQ",
+      "content": "Produit stock ProFood: Friteuse professionnelle gaz double cuve 2x12L - PROMATEQ. Description: Friteuse professionnelle gaz double cuve 2x12L - PROMATEQ. Équipement professionnel robuste avec caractéristique principale 2x12L, finition gaz. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Friteuse professionnelle (Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 14200 MAD, TVA/taxes associées: 2840.0 MAD, remise: 0 MAD, prix indicatif TTC: 17040.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000015d",
+        "produit_service_id": "70000000000000000000015c",
+        "category_id": "3e6601ffe62bd43283aa4cc5",
+        "category_name": "Friteuse professionnelle",
+        "category_domain": "Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000015d",
+        "designation": "Friteuse professionnelle gaz double cuve 2x12L - PROMATEQ",
+        "description": "Friteuse professionnelle gaz double cuve 2x12L - PROMATEQ. Équipement professionnel robuste avec caractéristique principale 2x12L, finition gaz. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/friteuse-professionnelle-gaz-double-cuve-2x12l-promateq.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 14200,
+        "discount_mad": 0,
+        "taxes_mad": 2840.0,
+        "estimated_price_ttc_mad": 17040.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000169",
+      "type": "stock_product_record",
+      "title": "Hachoir à viande professionnel 32 inox - PROMATEQ",
+      "content": "Produit stock ProFood: Hachoir à viande professionnel 32 inox - PROMATEQ. Description: Hachoir à viande professionnel 32 inox - PROMATEQ. Équipement professionnel robuste avec caractéristique principale modèle 32, finition inox. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Hachoir à viande professionnel (Préparation Alimentaire). Unité: Pièce. Quantité de référence: 1. Prix HT: 9500 MAD, TVA/taxes associées: 1900.0 MAD, remise: 0 MAD, prix indicatif TTC: 11400.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000169",
+        "produit_service_id": "700000000000000000000168",
+        "category_id": "736f18e1d18aea86a1dc47a8",
+        "category_name": "Hachoir à viande professionnel",
+        "category_domain": "Préparation Alimentaire",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000169",
+        "designation": "Hachoir à viande professionnel 32 inox - PROMATEQ",
+        "description": "Hachoir à viande professionnel 32 inox - PROMATEQ. Équipement professionnel robuste avec caractéristique principale modèle 32, finition inox. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/hachoir-viande-professionnel-32-inox-promateq.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 9500,
+        "discount_mad": 0,
+        "taxes_mad": 1900.0,
+        "estimated_price_ttc_mad": 11400.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000175",
+      "type": "stock_product_record",
+      "title": "Bac de salage électrique inox 60L - Maroc Cuisine Pro",
+      "content": "Produit stock ProFood: Bac de salage électrique inox 60L - Maroc Cuisine Pro. Description: Bac de salage électrique inox 60L - Maroc Cuisine Pro. Équipement professionnel robuste avec caractéristique principale 60L, finition inox 304. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Bac de salage électrique (Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 2200 MAD, TVA/taxes associées: 440.0 MAD, remise: 0 MAD, prix indicatif TTC: 2640.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000175",
+        "produit_service_id": "700000000000000000000174",
+        "category_id": "eebee54e2ead6fa3ecf532a9",
+        "category_name": "Bac de salage électrique",
+        "category_domain": "Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000175",
+        "designation": "Bac de salage électrique inox 60L - Maroc Cuisine Pro",
+        "description": "Bac de salage électrique inox 60L - Maroc Cuisine Pro. Équipement professionnel robuste avec caractéristique principale 60L, finition inox 304. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/bac-de-salage-lectrique-inox-60l-maroc-cuisine-pro.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 2200,
+        "discount_mad": 0,
+        "taxes_mad": 440.0,
+        "estimated_price_ttc_mad": 2640.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000181",
+      "type": "stock_product_record",
+      "title": "Réfrigérateur armoire positive 700L inox - Italia Machines",
+      "content": "Produit stock ProFood: Réfrigérateur armoire positive 700L inox - Italia Machines. Description: Réfrigérateur armoire positive 700L inox - Italia Machines. Équipement professionnel robuste avec caractéristique principale 700L, finition +2/+8°C. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Réfrigérateur armoire positive (Froid & Conservation). Unité: Pièce. Quantité de référence: 1. Prix HT: 18500 MAD, TVA/taxes associées: 3700.0 MAD, remise: 0 MAD, prix indicatif TTC: 22200.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000181",
+        "produit_service_id": "700000000000000000000180",
+        "category_id": "e92672505ebefe834c216740",
+        "category_name": "Réfrigérateur armoire positive",
+        "category_domain": "Froid & Conservation",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000181",
+        "designation": "Réfrigérateur armoire positive 700L inox - Italia Machines",
+        "description": "Réfrigérateur armoire positive 700L inox - Italia Machines. Équipement professionnel robuste avec caractéristique principale 700L, finition +2/+8°C. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/r-frig-rateur-armoire-positive-700l-inox-italia-machines.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 18500,
+        "discount_mad": 0,
+        "taxes_mad": 3700.0,
+        "estimated_price_ttc_mad": 22200.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000018d",
+      "type": "stock_product_record",
+      "title": "Verre ballon 35cl lot de 24 - RESTOQUIP",
+      "content": "Produit stock ProFood: Verre ballon 35cl lot de 24 - RESTOQUIP. Description: Verre ballon 35cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 35 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Verre ballon (Verrerie). Unité: Lot. Quantité de référence: 1. Prix HT: 240 MAD, TVA/taxes associées: 48.0 MAD, remise: 0 MAD, prix indicatif TTC: 288.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000018d",
+        "produit_service_id": "70000000000000000000018c",
+        "category_id": "4a9c0bd7e0e5de56d2417b96",
+        "category_name": "Verre ballon",
+        "category_domain": "Verrerie",
+        "unit_id": "66988f7898182a5c40684013",
+        "unit_name": "Lot",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000018d",
+        "designation": "Verre ballon 35cl lot de 24 - RESTOQUIP",
+        "description": "Verre ballon 35cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 35 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/verre-ballon-35cl-lot-de-24-restoquip.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66988f7898182a5c40684013",
+          "designation": "Lot",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 240,
+        "discount_mad": 0,
+        "taxes_mad": 48.0,
+        "estimated_price_ttc_mad": 288.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000199",
+      "type": "stock_product_record",
+      "title": "Verre tulipe 30cl lot de 24 - RESTOQUIP",
+      "content": "Produit stock ProFood: Verre tulipe 30cl lot de 24 - RESTOQUIP. Description: Verre tulipe 30cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 30 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Verre tulipe (Verrerie). Unité: Lot. Quantité de référence: 1. Prix HT: 260 MAD, TVA/taxes associées: 52.0 MAD, remise: 0 MAD, prix indicatif TTC: 312.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000199",
+        "produit_service_id": "700000000000000000000198",
+        "category_id": "38841c8a28d19db66dc691d4",
+        "category_name": "Verre tulipe",
+        "category_domain": "Verrerie",
+        "unit_id": "66988f7898182a5c40684013",
+        "unit_name": "Lot",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000199",
+        "designation": "Verre tulipe 30cl lot de 24 - RESTOQUIP",
+        "description": "Verre tulipe 30cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 30 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/verre-tulipe-30cl-lot-de-24-restoquip.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66988f7898182a5c40684013",
+          "designation": "Lot",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 260,
+        "discount_mad": 0,
+        "taxes_mad": 52.0,
+        "estimated_price_ttc_mad": 312.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001a5",
+      "type": "stock_product_record",
+      "title": "Vitrine réfrigérée comptoir 160L - Italia Machines",
+      "content": "Produit stock ProFood: Vitrine réfrigérée comptoir 160L - Italia Machines. Description: Vitrine réfrigérée comptoir 160L - Italia Machines. Équipement professionnel robuste avec caractéristique principale 160L, finition +2/+8°C. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Vitrine réfrigérée de présentation (Froid & Conservation). Unité: Pièce. Quantité de référence: 1. Prix HT: 9600 MAD, TVA/taxes associées: 1920.0 MAD, remise: 0 MAD, prix indicatif TTC: 11520.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001a5",
+        "produit_service_id": "7000000000000000000001a4",
+        "category_id": "0891251bed07471f77c38717",
+        "category_name": "Vitrine réfrigérée de présentation",
+        "category_domain": "Froid & Conservation",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001a5",
+        "designation": "Vitrine réfrigérée comptoir 160L - Italia Machines",
+        "description": "Vitrine réfrigérée comptoir 160L - Italia Machines. Équipement professionnel robuste avec caractéristique principale 160L, finition +2/+8°C. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/vitrine-r-frig-r-e-comptoir-160l-italia-machines.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 9600,
+        "discount_mad": 0,
+        "taxes_mad": 1920.0,
+        "estimated_price_ttc_mad": 11520.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001b1",
+      "type": "stock_product_record",
+      "title": "Table de travail inox 180x70cm avec étagère - Cuisimark",
+      "content": "Produit stock ProFood: Table de travail inox 180x70cm avec étagère - Cuisimark. Description: Table de travail inox 180x70cm avec étagère - Cuisimark. Équipement professionnel robuste avec caractéristique principale 180x70 cm, finition inox 304. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Table de travail inox (Mobilier Cuisine). Unité: Pièce. Quantité de référence: 1. Prix HT: 3600 MAD, TVA/taxes associées: 720.0 MAD, remise: 0 MAD, prix indicatif TTC: 4320.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001b1",
+        "produit_service_id": "7000000000000000000001b0",
+        "category_id": "3f63dd5c5e5d950ba666393d",
+        "category_name": "Table de travail inox",
+        "category_domain": "Mobilier Cuisine",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001b1",
+        "designation": "Table de travail inox 180x70cm avec étagère - Cuisimark",
+        "description": "Table de travail inox 180x70cm avec étagère - Cuisimark. Équipement professionnel robuste avec caractéristique principale 180x70 cm, finition inox 304. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/table-de-travail-inox-180x70cm-avec-tag-re-cuisimark.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 3600,
+        "discount_mad": 0,
+        "taxes_mad": 720.0,
+        "estimated_price_ttc_mad": 4320.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001bd",
+      "type": "stock_product_record",
+      "title": "Four à pizza professionnel 2 chambres - Italia Machines",
+      "content": "Produit stock ProFood: Four à pizza professionnel 2 chambres - Italia Machines. Description: Four à pizza professionnel 2 chambres - Italia Machines. Équipement professionnel robuste avec caractéristique principale 2 chambres, finition électrique. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Four à pizza professionnel (Fours). Unité: Pièce. Quantité de référence: 1. Prix HT: 24500 MAD, TVA/taxes associées: 4900.0 MAD, remise: 0 MAD, prix indicatif TTC: 29400.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001bd",
+        "produit_service_id": "7000000000000000000001bc",
+        "category_id": "c5317676b47815ed5ef69598",
+        "category_name": "Four à pizza professionnel",
+        "category_domain": "Fours",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001bd",
+        "designation": "Four à pizza professionnel 2 chambres - Italia Machines",
+        "description": "Four à pizza professionnel 2 chambres - Italia Machines. Équipement professionnel robuste avec caractéristique principale 2 chambres, finition électrique. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/four-pizza-professionnel-2-chambres-italia-machines.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 24500,
+        "discount_mad": 0,
+        "taxes_mad": 4900.0,
+        "estimated_price_ttc_mad": 29400.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001c9",
+      "type": "stock_product_record",
+      "title": "Flûte sur pied 18cl lot de 24 - RESTOQUIP",
+      "content": "Produit stock ProFood: Flûte sur pied 18cl lot de 24 - RESTOQUIP. Description: Flûte sur pied 18cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 18 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Flûte sur pied (Verrerie). Unité: Lot. Quantité de référence: 1. Prix HT: 280 MAD, TVA/taxes associées: 56.0 MAD, remise: 0 MAD, prix indicatif TTC: 336.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001c9",
+        "produit_service_id": "7000000000000000000001c8",
+        "category_id": "790cebb29ce2a4a1415e9444",
+        "category_name": "Flûte sur pied",
+        "category_domain": "Verrerie",
+        "unit_id": "66988f7898182a5c40684013",
+        "unit_name": "Lot",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001c9",
+        "designation": "Flûte sur pied 18cl lot de 24 - RESTOQUIP",
+        "description": "Flûte sur pied 18cl lot de 24 - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 18 cl, finition lot 24. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/fl-te-sur-pied-18cl-lot-de-24-restoquip.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66988f7898182a5c40684013",
+          "designation": "Lot",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 280,
+        "discount_mad": 0,
+        "taxes_mad": 56.0,
+        "estimated_price_ttc_mad": 336.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001d5",
+      "type": "stock_product_record",
+      "title": "Lave-vaisselle à capot 380V économique - PROMATEQ",
+      "content": "Produit stock ProFood: Lave-vaisselle à capot 380V économique - PROMATEQ. Description: Lave-vaisselle à capot 380V économique - PROMATEQ. Équipement professionnel robuste avec caractéristique principale 45 paniers/h, finition classe énergétique C. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Lave-vaisselle à capot professionnel (Lavage). Unité: Pièce. Quantité de référence: 1. Prix HT: 34500 MAD, TVA/taxes associées: 6900.0 MAD, remise: 0 MAD, prix indicatif TTC: 41400.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001d5",
+        "produit_service_id": "7000000000000000000001d4",
+        "category_id": "082b28afd02f20417cd82389",
+        "category_name": "Lave-vaisselle à capot professionnel",
+        "category_domain": "Lavage",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001d5",
+        "designation": "Lave-vaisselle à capot 380V économique - PROMATEQ",
+        "description": "Lave-vaisselle à capot 380V économique - PROMATEQ. Équipement professionnel robuste avec caractéristique principale 45 paniers/h, finition classe énergétique C. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/lave-vaisselle-capot-380v-conomique-promateq.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 34500,
+        "discount_mad": 0,
+        "taxes_mad": 6900.0,
+        "estimated_price_ttc_mad": 41400.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001e1",
+      "type": "stock_product_record",
+      "title": "Bac de stockage alimentaire 60L avec couvercle - RESTOQUIP",
+      "content": "Produit stock ProFood: Bac de stockage alimentaire 60L avec couvercle - RESTOQUIP. Description: Bac de stockage alimentaire 60L avec couvercle - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 60L, finition PEHD alimentaire. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Bac de stockage alimentaire (Stockage). Unité: Pièce. Quantité de référence: 1. Prix HT: 190 MAD, TVA/taxes associées: 38.0 MAD, remise: 0 MAD, prix indicatif TTC: 228.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001e1",
+        "produit_service_id": "7000000000000000000001e0",
+        "category_id": "65860f0666b8e6326d073498",
+        "category_name": "Bac de stockage alimentaire",
+        "category_domain": "Stockage",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001e1",
+        "designation": "Bac de stockage alimentaire 60L avec couvercle - RESTOQUIP",
+        "description": "Bac de stockage alimentaire 60L avec couvercle - RESTOQUIP. Équipement professionnel robuste avec caractéristique principale 60L, finition PEHD alimentaire. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/bac-de-stockage-alimentaire-60l-avec-couvercle-restoquip.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 190,
+        "discount_mad": 0,
+        "taxes_mad": 38.0,
+        "estimated_price_ttc_mad": 228.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001ed",
+      "type": "stock_product_record",
+      "title": "Boîte à emporter kraft burger 500 pcs - Gmark Groupe",
+      "content": "Produit stock ProFood: Boîte à emporter kraft burger 500 pcs - Gmark Groupe. Description: Boîte à emporter kraft burger 500 pcs - Gmark Groupe. Équipement professionnel robuste avec caractéristique principale 500 pièces, finition kraft alimentaire. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Boîtes à emporter (hamburger, lunch) (Emballage Alimentaire). Unité: Carton. Quantité de référence: 1. Prix HT: 420 MAD, TVA/taxes associées: 84.0 MAD, remise: 0 MAD, prix indicatif TTC: 504.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001ed",
+        "produit_service_id": "7000000000000000000001ec",
+        "category_id": "328a841bb9ec2f63c3161190",
+        "category_name": "Boîtes à emporter (hamburger, lunch)",
+        "category_domain": "Emballage Alimentaire",
+        "unit_id": "66c35277e2997f17ee58c857",
+        "unit_name": "Carton",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001ed",
+        "designation": "Boîte à emporter kraft burger 500 pcs - Gmark Groupe",
+        "description": "Boîte à emporter kraft burger 500 pcs - Gmark Groupe. Équipement professionnel robuste avec caractéristique principale 500 pièces, finition kraft alimentaire. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/bo-te-emporter-kraft-burger-500-pcs-gmark-groupe.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66c35277e2997f17ee58c857",
+          "designation": "Carton",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 420,
+        "discount_mad": 0,
+        "taxes_mad": 84.0,
+        "estimated_price_ttc_mad": 504.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_7000000000000000000001f9",
+      "type": "stock_product_record",
+      "title": "Tajine grand format terre cuite 35cm - CuisinePro Maroc",
+      "content": "Produit stock ProFood: Tajine grand format terre cuite 35cm - CuisinePro Maroc. Description: Tajine grand format terre cuite 35cm - CuisinePro Maroc. Équipement professionnel robuste avec caractéristique principale 35 cm, finition terre cuite. Conçu pour usage intensif en cuisine professionnelle. Catégorie: Tajine grand format (Ustensiles de Cuisson). Unité: Pièce. Quantité de référence: 1. Prix HT: 180 MAD, TVA/taxes associées: 36.0 MAD, remise: 0 MAD, prix indicatif TTC: 216.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "7000000000000000000001f9",
+        "produit_service_id": "7000000000000000000001f8",
+        "category_id": "9ef91ed170c1e1ab69645767",
+        "category_name": "Tajine grand format",
+        "category_domain": "Ustensiles de Cuisson",
+        "unit_id": "66552bc520a5e540f190e759",
+        "unit_name": "Pièce",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "7000000000000000000001f9",
+        "designation": "Tajine grand format terre cuite 35cm - CuisinePro Maroc",
+        "description": "Tajine grand format terre cuite 35cm - CuisinePro Maroc. Équipement professionnel robuste avec caractéristique principale 35 cm, finition terre cuite. Conçu pour usage intensif en cuisine professionnelle.",
+        "photo": "images/produit-service/equipements/tajine-grand-format-terre-cuite-35cm-cuisinepro-maroc.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66552bc520a5e540f190e759",
+          "designation": "Pièce",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 180,
+        "discount_mad": 0,
+        "taxes_mad": 36.0,
+        "estimated_price_ttc_mad": 216.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000205",
+      "type": "stock_product_record",
+      "title": "Livraison express de légumes et fruits frais",
+      "content": "Produit stock ProFood: Livraison express de légumes et fruits frais. Description: Service PROFOOD réel pour professionnels : Livraison express de légumes et fruits frais. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Livraison de légumes et fruits frais (Livraison). Unité: Unité. Quantité de référence: 1. Prix HT: 120 MAD, TVA/taxes associées: 24.0 MAD, remise: 0 MAD, prix indicatif TTC: 144.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000205",
+        "produit_service_id": "700000000000000000000204",
+        "category_id": "a35fc721d1641cd482f0a638",
+        "category_name": "Livraison de légumes et fruits frais",
+        "category_domain": "Livraison",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000205",
+        "designation": "Livraison express de légumes et fruits frais",
+        "description": "Service PROFOOD réel pour professionnels : Livraison express de légumes et fruits frais. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/livraison-express-de-l-gumes-et-fruits-frais.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 120,
+        "discount_mad": 0,
+        "taxes_mad": 24.0,
+        "estimated_price_ttc_mad": 144.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000020e",
+      "type": "stock_product_record",
+      "title": "Livraison sécurisée de matériel de cuisine",
+      "content": "Produit stock ProFood: Livraison sécurisée de matériel de cuisine. Description: Service PROFOOD réel pour professionnels : Livraison sécurisée de matériel de cuisine. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Livraison de matériel de cuisine (Livraison). Unité: Unité. Quantité de référence: 1. Prix HT: 250 MAD, TVA/taxes associées: 50.0 MAD, remise: 0 MAD, prix indicatif TTC: 300.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000020e",
+        "produit_service_id": "70000000000000000000020d",
+        "category_id": "ff4ecac581ed9a8226f449ba",
+        "category_name": "Livraison de matériel de cuisine",
+        "category_domain": "Livraison",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000020e",
+        "designation": "Livraison sécurisée de matériel de cuisine",
+        "description": "Service PROFOOD réel pour professionnels : Livraison sécurisée de matériel de cuisine. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/livraison-s-curis-e-de-mat-riel-de-cuisine.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 250,
+        "discount_mad": 0,
+        "taxes_mad": 50.0,
+        "estimated_price_ttc_mad": 300.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000217",
+      "type": "stock_product_record",
+      "title": "Installation complète de fours professionnels",
+      "content": "Produit stock ProFood: Installation complète de fours professionnels. Description: Service PROFOOD réel pour professionnels : Installation complète de fours professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Installation de fours professionnels (Installation). Unité: Unité. Quantité de référence: 1. Prix HT: 1200 MAD, TVA/taxes associées: 240.0 MAD, remise: 0 MAD, prix indicatif TTC: 1440.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000217",
+        "produit_service_id": "700000000000000000000216",
+        "category_id": "e48dcdb51236939ca18d9c4a",
+        "category_name": "Installation de fours professionnels",
+        "category_domain": "Installation",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000217",
+        "designation": "Installation complète de fours professionnels",
+        "description": "Service PROFOOD réel pour professionnels : Installation complète de fours professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/installation-compl-te-de-fours-professionnels.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 1200,
+        "discount_mad": 0,
+        "taxes_mad": 240.0,
+        "estimated_price_ttc_mad": 1440.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000220",
+      "type": "stock_product_record",
+      "title": "Installation de friteuses et grills professionnels",
+      "content": "Produit stock ProFood: Installation de friteuses et grills professionnels. Description: Service PROFOOD réel pour professionnels : Installation de friteuses et grills professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Installation de friteuses et grills (Installation). Unité: Unité. Quantité de référence: 1. Prix HT: 900 MAD, TVA/taxes associées: 180.0 MAD, remise: 0 MAD, prix indicatif TTC: 1080.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000220",
+        "produit_service_id": "70000000000000000000021f",
+        "category_id": "e4f32af257086a32dbaa1a08",
+        "category_name": "Installation de friteuses et grills",
+        "category_domain": "Installation",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000220",
+        "designation": "Installation de friteuses et grills professionnels",
+        "description": "Service PROFOOD réel pour professionnels : Installation de friteuses et grills professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/installation-de-friteuses-et-grills-professionnels.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 900,
+        "discount_mad": 0,
+        "taxes_mad": 180.0,
+        "estimated_price_ttc_mad": 1080.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000229",
+      "type": "stock_product_record",
+      "title": "Installation de machines à café professionnelles",
+      "content": "Produit stock ProFood: Installation de machines à café professionnelles. Description: Service PROFOOD réel pour professionnels : Installation de machines à café professionnelles. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Installation de machines à café professionnelles (Installation). Unité: Unité. Quantité de référence: 1. Prix HT: 750 MAD, TVA/taxes associées: 150.0 MAD, remise: 0 MAD, prix indicatif TTC: 900.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000229",
+        "produit_service_id": "700000000000000000000228",
+        "category_id": "55a8040bdfa4f9cf5db909fa",
+        "category_name": "Installation de machines à café professionnelles",
+        "category_domain": "Installation",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000229",
+        "designation": "Installation de machines à café professionnelles",
+        "description": "Service PROFOOD réel pour professionnels : Installation de machines à café professionnelles. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/installation-de-machines-caf-professionnelles.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 750,
+        "discount_mad": 0,
+        "taxes_mad": 150.0,
+        "estimated_price_ttc_mad": 900.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000232",
+      "type": "stock_product_record",
+      "title": "Installation d'hottes d'aspiration professionnelles",
+      "content": "Produit stock ProFood: Installation d'hottes d'aspiration professionnelles. Description: Service PROFOOD réel pour professionnels : Installation d'hottes d'aspiration professionnelles. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Installation d'hottes d'aspiration (Installation). Unité: Unité. Quantité de référence: 1. Prix HT: 1100 MAD, TVA/taxes associées: 220.0 MAD, remise: 0 MAD, prix indicatif TTC: 1320.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000232",
+        "produit_service_id": "700000000000000000000231",
+        "category_id": "842b14dd6929d971bf91e9a3",
+        "category_name": "Installation d'hottes d'aspiration",
+        "category_domain": "Installation",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000232",
+        "designation": "Installation d'hottes d'aspiration professionnelles",
+        "description": "Service PROFOOD réel pour professionnels : Installation d'hottes d'aspiration professionnelles. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/installation-d-hottes-d-aspiration-professionnelles.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 1100,
+        "discount_mad": 0,
+        "taxes_mad": 220.0,
+        "estimated_price_ttc_mad": 1320.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000023b",
+      "type": "stock_product_record",
+      "title": "Contrat de maintenance générale des équipements",
+      "content": "Produit stock ProFood: Contrat de maintenance générale des équipements. Description: Service PROFOOD réel pour professionnels : Contrat de maintenance générale des équipements. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Maintenance générale (Maintenance). Unité: Unité. Quantité de référence: 1. Prix HT: 600 MAD, TVA/taxes associées: 120.0 MAD, remise: 0 MAD, prix indicatif TTC: 720.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000023b",
+        "produit_service_id": "70000000000000000000023a",
+        "category_id": "0b30374317937b50e06cb5b9",
+        "category_name": "Maintenance générale",
+        "category_domain": "Maintenance",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000023b",
+        "designation": "Contrat de maintenance générale des équipements",
+        "description": "Service PROFOOD réel pour professionnels : Contrat de maintenance générale des équipements. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/contrat-de-maintenance-g-n-rale-des-quipements.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 600,
+        "discount_mad": 0,
+        "taxes_mad": 120.0,
+        "estimated_price_ttc_mad": 720.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000244",
+      "type": "stock_product_record",
+      "title": "Entretien périodique des fours professionnels",
+      "content": "Produit stock ProFood: Entretien périodique des fours professionnels. Description: Service PROFOOD réel pour professionnels : Entretien périodique des fours professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Entretien périodique des fours (Maintenance). Unité: Unité. Quantité de référence: 1. Prix HT: 650 MAD, TVA/taxes associées: 130.0 MAD, remise: 0 MAD, prix indicatif TTC: 780.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000244",
+        "produit_service_id": "700000000000000000000243",
+        "category_id": "9a669a408690b15ebc2e49c4",
+        "category_name": "Entretien périodique des fours",
+        "category_domain": "Maintenance",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000244",
+        "designation": "Entretien périodique des fours professionnels",
+        "description": "Service PROFOOD réel pour professionnels : Entretien périodique des fours professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/entretien-p-riodique-des-fours-professionnels.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 650,
+        "discount_mad": 0,
+        "taxes_mad": 130.0,
+        "estimated_price_ttc_mad": 780.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000024d",
+      "type": "stock_product_record",
+      "title": "Nettoyage profond de cuisine (hood cleaning)",
+      "content": "Produit stock ProFood: Nettoyage profond de cuisine (hood cleaning). Description: Service PROFOOD réel pour professionnels : Nettoyage profond de cuisine (hood cleaning). Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Nettoyage profond cuisine (hood cleaning) (Nettoyage Industriel). Unité: Unité. Quantité de référence: 1. Prix HT: 950 MAD, TVA/taxes associées: 190.0 MAD, remise: 0 MAD, prix indicatif TTC: 1140.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000024d",
+        "produit_service_id": "70000000000000000000024c",
+        "category_id": "cb2fb28e79fa516eaa1e6a55",
+        "category_name": "Nettoyage profond cuisine (hood cleaning)",
+        "category_domain": "Nettoyage Industriel",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000024d",
+        "designation": "Nettoyage profond de cuisine (hood cleaning)",
+        "description": "Service PROFOOD réel pour professionnels : Nettoyage profond de cuisine (hood cleaning). Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/nettoyage-profond-de-cuisine-hood-cleaning.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 950,
+        "discount_mad": 0,
+        "taxes_mad": 190.0,
+        "estimated_price_ttc_mad": 1140.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000256",
+      "type": "stock_product_record",
+      "title": "Nettoyage et désinfection des chambres froides",
+      "content": "Produit stock ProFood: Nettoyage et désinfection des chambres froides. Description: Service PROFOOD réel pour professionnels : Nettoyage et désinfection des chambres froides. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Nettoyage chambres froides (Nettoyage Industriel). Unité: Unité. Quantité de référence: 1. Prix HT: 850 MAD, TVA/taxes associées: 170.0 MAD, remise: 0 MAD, prix indicatif TTC: 1020.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000256",
+        "produit_service_id": "700000000000000000000255",
+        "category_id": "f8fd75e4937eee2afe4fcc5a",
+        "category_name": "Nettoyage chambres froides",
+        "category_domain": "Nettoyage Industriel",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000256",
+        "designation": "Nettoyage et désinfection des chambres froides",
+        "description": "Service PROFOOD réel pour professionnels : Nettoyage et désinfection des chambres froides. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/nettoyage-et-d-sinfection-des-chambres-froides.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 850,
+        "discount_mad": 0,
+        "taxes_mad": 170.0,
+        "estimated_price_ttc_mad": 1020.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000025f",
+      "type": "stock_product_record",
+      "title": "Désinfection et nettoyage des équipements de cuisson",
+      "content": "Produit stock ProFood: Désinfection et nettoyage des équipements de cuisson. Description: Service PROFOOD réel pour professionnels : Désinfection et nettoyage des équipements de cuisson. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Nettoyage et désinfection des équipements (Nettoyage Industriel). Unité: Unité. Quantité de référence: 1. Prix HT: 700 MAD, TVA/taxes associées: 140.0 MAD, remise: 0 MAD, prix indicatif TTC: 840.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000025f",
+        "produit_service_id": "70000000000000000000025e",
+        "category_id": "1b4ce5c0ea91e995c213eb66",
+        "category_name": "Nettoyage et désinfection des équipements",
+        "category_domain": "Nettoyage Industriel",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000025f",
+        "designation": "Désinfection et nettoyage des équipements de cuisson",
+        "description": "Service PROFOOD réel pour professionnels : Désinfection et nettoyage des équipements de cuisson. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/d-sinfection-et-nettoyage-des-quipements-de-cuisson.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 700,
+        "discount_mad": 0,
+        "taxes_mad": 140.0,
+        "estimated_price_ttc_mad": 840.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000268",
+      "type": "stock_product_record",
+      "title": "Conseil en aménagement d'espace de restauration",
+      "content": "Produit stock ProFood: Conseil en aménagement d'espace de restauration. Description: Service PROFOOD réel pour professionnels : Conseil en aménagement d'espace de restauration. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Conseil aménagement d'espace (Conseil & Devis). Unité: Unité. Quantité de référence: 1. Prix HT: 500 MAD, TVA/taxes associées: 100.0 MAD, remise: 0 MAD, prix indicatif TTC: 600.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000268",
+        "produit_service_id": "700000000000000000000267",
+        "category_id": "10210a43939bb9bfda695b91",
+        "category_name": "Conseil aménagement d'espace",
+        "category_domain": "Conseil & Devis",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000268",
+        "designation": "Conseil en aménagement d'espace de restauration",
+        "description": "Service PROFOOD réel pour professionnels : Conseil en aménagement d'espace de restauration. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/conseil-en-am-nagement-d-espace-de-restauration.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 500,
+        "discount_mad": 0,
+        "taxes_mad": 100.0,
+        "estimated_price_ttc_mad": 600.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000271",
+      "type": "stock_product_record",
+      "title": "Broderie et marquage logo sur textiles professionnels",
+      "content": "Produit stock ProFood: Broderie et marquage logo sur textiles professionnels. Description: Service PROFOOD réel pour professionnels : Broderie et marquage logo sur textiles professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Broderie et marquage logo (Personnalisation & Impression). Unité: Unité. Quantité de référence: 1. Prix HT: 60 MAD, TVA/taxes associées: 12.0 MAD, remise: 0 MAD, prix indicatif TTC: 72.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000271",
+        "produit_service_id": "700000000000000000000270",
+        "category_id": "9d8ebe6943cf766c24672622",
+        "category_name": "Broderie et marquage logo",
+        "category_domain": "Personnalisation & Impression",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000271",
+        "designation": "Broderie et marquage logo sur textiles professionnels",
+        "description": "Service PROFOOD réel pour professionnels : Broderie et marquage logo sur textiles professionnels. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/broderie-et-marquage-logo-sur-textiles-professionnels.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 60,
+        "discount_mad": 0,
+        "taxes_mad": 12.0,
+        "estimated_price_ttc_mad": 72.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_70000000000000000000027a",
+      "type": "stock_product_record",
+      "title": "Personnalisation sur demande (produits et supports)",
+      "content": "Produit stock ProFood: Personnalisation sur demande (produits et supports). Description: Service PROFOOD réel pour professionnels : Personnalisation sur demande (produits et supports). Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Personnalisation sur demande (Personnalisation & Impression). Unité: Unité. Quantité de référence: 1. Prix HT: 150 MAD, TVA/taxes associées: 30.0 MAD, remise: 0 MAD, prix indicatif TTC: 180.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "70000000000000000000027a",
+        "produit_service_id": "700000000000000000000279",
+        "category_id": "f87c2bf68f8c53ca2a2db45f",
+        "category_name": "Personnalisation sur demande",
+        "category_domain": "Personnalisation & Impression",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "70000000000000000000027a",
+        "designation": "Personnalisation sur demande (produits et supports)",
+        "description": "Service PROFOOD réel pour professionnels : Personnalisation sur demande (produits et supports). Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/personnalisation-sur-demande-produits-et-supports.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 150,
+        "discount_mad": 0,
+        "taxes_mad": 30.0,
+        "estimated_price_ttc_mad": 180.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_product_700000000000000000000283",
+      "type": "stock_product_record",
+      "title": "Création de design graphique professionnel",
+      "content": "Produit stock ProFood: Création de design graphique professionnel. Description: Service PROFOOD réel pour professionnels : Création de design graphique professionnel. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B. Catégorie: Design graphique (Personnalisation & Impression). Unité: Unité. Quantité de référence: 1. Prix HT: 350 MAD, TVA/taxes associées: 70.0 MAD, remise: 0 MAD, prix indicatif TTC: 420.0 MAD. État de publication: etatDeCreation.creation; état objet: code-1.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "product_inventory",
+        "source_file": "produitAssocie.json",
+        "source_record_id": "700000000000000000000283",
+        "produit_service_id": "700000000000000000000282",
+        "category_id": "1ba7de0d57a0873b8ad41fb4",
+        "category_name": "Design graphique",
+        "category_domain": "Personnalisation & Impression",
+        "unit_id": "66624d15fb500358a36a8db2",
+        "unit_name": "Unité",
+        "language": "fr",
+        "doc_type": "structured_product_stock",
+        "created_at": "2026-05-13T00:00:00.000Z",
+        "updated_at": "2026-05-13T00:00:00.000Z"
+      },
+      "structured_data": {
+        "product_id": "700000000000000000000283",
+        "designation": "Création de design graphique professionnel",
+        "description": "Service PROFOOD réel pour professionnels : Création de design graphique professionnel. Prestataire identifié, planification claire, prix indicatif HT et intervention adaptée aux besoins B2B.",
+        "photo": "images/produit-service/services/cr-ation-de-design-graphique-professionnel.png",
+        "quantity_reference": 1,
+        "unit": {
+          "id": "66624d15fb500358a36a8db2",
+          "designation": "Unité",
+          "domain_id": "aed9e70ede71f2c951d75675",
+          "domain_code": "unite produit"
+        },
+        "price_ht_mad": 350,
+        "discount_mad": 0,
+        "taxes_mad": 70.0,
+        "estimated_price_ttc_mad": 420.0,
+        "publication_state": "etatDeCreation.creation",
+        "object_state": "code-1",
+        "beneficiaries": [
+          {
+            "translations": [
+              {
+                "language": "fr",
+                "nom": "Client",
+                "prenom": "PROFOOD"
+              }
+            ],
+            "email": "client@profood.ma",
+            "telephone": "0600000000"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000001",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Fournisseur équipements Casablanca",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Fournisseur équipements Casablanca. Description: Fournisseur CHR et équipements professionnels à Casablanca. Adresse: Zone industrielle Sidi Maârouf, Casablanca, Maroc. Ville: Casablanca, province: Casablanca, région: Casablanca-Settat, pays: Maroc. Contact: email contact@equipchr-casa.ma, téléphone 0522401100, web www.equipchr-casa.ma. Coordonnées GPS: latitude 33.5204, longitude -7.6465.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000001",
+        "city": "Casablanca",
+        "province": "Casablanca",
+        "region": "Casablanca-Settat",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000001",
+        "designation": "Coordonnée géographique - Fournisseur équipements Casablanca",
+        "description": "Fournisseur CHR et équipements professionnels à Casablanca",
+        "address": "Zone industrielle Sidi Maârouf, Casablanca, Maroc",
+        "postal_code": "20270",
+        "email": "contact@equipchr-casa.ma",
+        "mobile": "0522401100",
+        "web": "www.equipchr-casa.ma",
+        "latitude": 33.5204,
+        "longitude": -7.6465,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "b1b220886505fa02d7b2bf3a",
+          "designation": "Casablanca-Settat",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "b70304a15e2389720ee8a99e",
+          "designation": "Casablanca",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "b8633c6b9e9e6d68f0f65ee2",
+          "designation": "Casablanca",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64339a8153ab06b1ab67d7ee",
+            "designation": "Équipements professionnels CHR",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000002",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Distributeur alimentaire Tanger",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Distributeur alimentaire Tanger. Description: Distributeur B2B de produits alimentaires à Tanger. Adresse: Zone industrielle Mghogha, Tanger, Maroc. Ville: Tanger, province: Tanger-Assilah, région: Tanger-Tétouan-Al Hoceïma, pays: Maroc. Contact: email contact@foodb2b-tanger.ma, téléphone 0539312200, web www.foodb2b-tanger.ma. Coordonnées GPS: latitude 35.7595, longitude -5.8339.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000002",
+        "city": "Tanger",
+        "province": "Tanger-Assilah",
+        "region": "Tanger-Tétouan-Al Hoceïma",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000002",
+        "designation": "Coordonnée géographique - Distributeur alimentaire Tanger",
+        "description": "Distributeur B2B de produits alimentaires à Tanger",
+        "address": "Zone industrielle Mghogha, Tanger, Maroc",
+        "postal_code": "90000",
+        "email": "contact@foodb2b-tanger.ma",
+        "mobile": "0539312200",
+        "web": "www.foodb2b-tanger.ma",
+        "latitude": 35.7595,
+        "longitude": -5.8339,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "9d021c61497c13de703c9f56",
+          "designation": "Tanger-Tétouan-Al Hoceïma",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "e1536e0f15f7d0aab5f4fd8f",
+          "designation": "Tanger-Assilah",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "4891ad30a22a958d4eff258a",
+          "designation": "Tanger",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "644b97844834e7813ff037c6",
+            "designation": "Distribution alimentaire B2B",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          },
+          {
+            "id": "644fd2a46196ce69b3bb7b32",
+            "designation": "Industrie agroalimentaire",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000003",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Boulangerie professionnelle Tétouan",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Boulangerie professionnelle Tétouan. Description: Boulangerie et pâtisserie professionnelle à Tétouan. Adresse: Avenue des FAR, Tétouan, Maroc. Ville: Tétouan, province: Tétouan, région: Tanger-Tétouan-Al Hoceïma, pays: Maroc. Contact: email contact@boulangerie-tetouan.ma, téléphone 0539703300, web www.boulangerie-tetouan.ma. Coordonnées GPS: latitude 35.5785, longitude -5.3684.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000003",
+        "city": "Tétouan",
+        "province": "Tétouan",
+        "region": "Tanger-Tétouan-Al Hoceïma",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000003",
+        "designation": "Coordonnée géographique - Boulangerie professionnelle Tétouan",
+        "description": "Boulangerie et pâtisserie professionnelle à Tétouan",
+        "address": "Avenue des FAR, Tétouan, Maroc",
+        "postal_code": "93000",
+        "email": "contact@boulangerie-tetouan.ma",
+        "mobile": "0539703300",
+        "web": "www.boulangerie-tetouan.ma",
+        "latitude": 35.5785,
+        "longitude": -5.3684,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "9d021c61497c13de703c9f56",
+          "designation": "Tanger-Tétouan-Al Hoceïma",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "f832463a6e2bded1f6c2d2e5",
+          "designation": "Tétouan",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "b01c62afae0a0bbad9bdaef2",
+          "designation": "Tétouan",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64db8b9160af2aa2c57dad93",
+            "designation": "Boulangerie & pâtisserie",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000004",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Restaurant Rabat Agdal",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Restaurant Rabat Agdal. Description: Restaurant professionnel localisé à Rabat Agdal. Adresse: Avenue Fal Ould Oumeir, Agdal, Rabat, Maroc. Ville: Rabat, province: Rabat, région: Rabat-Salé-Kénitra, pays: Maroc. Contact: email contact@resto-agdal.ma, téléphone 0537774400, web www.resto-agdal.ma. Coordonnées GPS: latitude 34.0011, longitude -6.8498.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000004",
+        "city": "Rabat",
+        "province": "Rabat",
+        "region": "Rabat-Salé-Kénitra",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000004",
+        "designation": "Coordonnée géographique - Restaurant Rabat Agdal",
+        "description": "Restaurant professionnel localisé à Rabat Agdal",
+        "address": "Avenue Fal Ould Oumeir, Agdal, Rabat, Maroc",
+        "postal_code": "10090",
+        "email": "contact@resto-agdal.ma",
+        "mobile": "0537774400",
+        "web": "www.resto-agdal.ma",
+        "latitude": 34.0011,
+        "longitude": -6.8498,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "679f13daf3331ee39e907afe",
+          "designation": "Rabat-Salé-Kénitra",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "7d26be0e093724a6b2bb09e5",
+          "designation": "Rabat",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "a00c68c2ec5e88677b8255fb",
+          "designation": "Rabat",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64e3a930e55f98ace708ae10",
+            "designation": "Restauration",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000005",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Équipement cuisine Marrakech",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Équipement cuisine Marrakech. Description: Fournisseur de matériel de cuisine professionnelle à Marrakech. Adresse: Zone industrielle Sidi Ghanem, Marrakech, Maroc. Ville: Marrakech, province: Marrakech, région: Marrakech-Safi, pays: Maroc. Contact: email contact@cuisinepro-marrakech.ma, téléphone 0524435500, web www.cuisinepro-marrakech.ma. Coordonnées GPS: latitude 31.6682, longitude -8.0361.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000005",
+        "city": "Marrakech",
+        "province": "Marrakech",
+        "region": "Marrakech-Safi",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000005",
+        "designation": "Coordonnée géographique - Équipement cuisine Marrakech",
+        "description": "Fournisseur de matériel de cuisine professionnelle à Marrakech",
+        "address": "Zone industrielle Sidi Ghanem, Marrakech, Maroc",
+        "postal_code": "40000",
+        "email": "contact@cuisinepro-marrakech.ma",
+        "mobile": "0524435500",
+        "web": "www.cuisinepro-marrakech.ma",
+        "latitude": 31.6682,
+        "longitude": -8.0361,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "dda881b3da8153ab4c5f4157",
+          "designation": "Marrakech-Safi",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "222742550e6b21a6b2009df1",
+          "designation": "Marrakech",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "1dec8bccc013b68081075d5a",
+          "designation": "Marrakech",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64339a8153ab06b1ab67d7ee",
+            "designation": "Équipements professionnels CHR",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000006",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Épicerie professionnelle Fès",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Épicerie professionnelle Fès. Description: Épicerie et produits secs pour professionnels à Fès. Adresse: Zone industrielle Sidi Brahim, Fès, Maroc. Ville: Fès, province: Fès, région: Fès-Meknès, pays: Maroc. Contact: email contact@epiceriepro-fes.ma, téléphone 0535626600, web www.epiceriepro-fes.ma. Coordonnées GPS: latitude 34.0372, longitude -5.0078.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000006",
+        "city": "Fès",
+        "province": "Fès",
+        "region": "Fès-Meknès",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000006",
+        "designation": "Coordonnée géographique - Épicerie professionnelle Fès",
+        "description": "Épicerie et produits secs pour professionnels à Fès",
+        "address": "Zone industrielle Sidi Brahim, Fès, Maroc",
+        "postal_code": "30000",
+        "email": "contact@epiceriepro-fes.ma",
+        "mobile": "0535626600",
+        "web": "www.epiceriepro-fes.ma",
+        "latitude": 34.0372,
+        "longitude": -5.0078,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "9fa5d0804667666cf9c2d210",
+          "designation": "Fès-Meknès",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "649d2898b60cc9b60ce79419",
+          "designation": "Fès",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "f49927816f73adf6c9d5754c",
+          "designation": "Fès",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "644fd2a46196ce69b3bb7b32",
+            "designation": "Industrie agroalimentaire",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          },
+          {
+            "id": "644b97844834e7813ff037c6",
+            "designation": "Distribution alimentaire B2B",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000007",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Produits frais Agadir",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Produits frais Agadir. Description: Distribution de produits frais et agricoles dans la région d’Agadir. Adresse: Quartier industriel Aït Melloul, Agadir, Maroc. Ville: Agadir, province: Agadir Ida-Outanane, région: Souss-Massa, pays: Maroc. Contact: email contact@produitsfrais-agadir.ma, téléphone 0528847700, web www.produitsfrais-agadir.ma. Coordonnées GPS: latitude 30.3947, longitude -9.555.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000007",
+        "city": "Agadir",
+        "province": "Agadir Ida-Outanane",
+        "region": "Souss-Massa",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000007",
+        "designation": "Coordonnée géographique - Produits frais Agadir",
+        "description": "Distribution de produits frais et agricoles dans la région d’Agadir",
+        "address": "Quartier industriel Aït Melloul, Agadir, Maroc",
+        "postal_code": "80000",
+        "email": "contact@produitsfrais-agadir.ma",
+        "mobile": "0528847700",
+        "web": "www.produitsfrais-agadir.ma",
+        "latitude": 30.3947,
+        "longitude": -9.555,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "00cc13c9c86ab96dd7611021",
+          "designation": "Souss-Massa",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "334b62f48de81269fd518dc7",
+          "designation": "Agadir Ida-Outanane",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "8cb215566a771c5ad9a7121a",
+          "designation": "Agadir",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64139a44d9ace194a7014be2",
+            "designation": "Agriculture & produits frais",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          },
+          {
+            "id": "644b97844834e7813ff037c6",
+            "designation": "Distribution alimentaire B2B",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000008",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Café professionnel Oujda",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Café professionnel Oujda. Description: Café et salon de thé professionnel à Oujda. Adresse: Boulevard Mohammed V, Oujda, Maroc. Ville: Oujda, province: Oujda-Angad, région: Oriental, pays: Maroc. Contact: email contact@cafepro-oujda.ma, téléphone 0536689900, web www.cafepro-oujda.ma. Coordonnées GPS: latitude 34.6814, longitude -1.9086.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000008",
+        "city": "Oujda",
+        "province": "Oujda-Angad",
+        "region": "Oriental",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000008",
+        "designation": "Coordonnée géographique - Café professionnel Oujda",
+        "description": "Café et salon de thé professionnel à Oujda",
+        "address": "Boulevard Mohammed V, Oujda, Maroc",
+        "postal_code": "60000",
+        "email": "contact@cafepro-oujda.ma",
+        "mobile": "0536689900",
+        "web": "www.cafepro-oujda.ma",
+        "latitude": 34.6814,
+        "longitude": -1.9086,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "a641fd272a0010a385639c67",
+          "designation": "Oriental",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "c9eb9322ab80dbfa034db8fa",
+          "designation": "Oujda-Angad",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "50bb283072cf8887e818ff80",
+          "designation": "Oujda",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64e6412f6477c6a144596fde",
+            "designation": "Cafés & salons de thé",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_700000000000000000000009",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Traiteur El Jadida",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Traiteur El Jadida. Description: Traiteur professionnel pour restauration et événements à El Jadida. Adresse: Avenue Mohamed VI, El Jadida, Maroc. Ville: El Jadida, province: El Jadida, région: Casablanca-Settat, pays: Maroc. Contact: email contact@traiteur-eljadida.ma, téléphone 0523358800, web www.traiteur-eljadida.ma. Coordonnées GPS: latitude 33.2316, longitude -8.5007.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "700000000000000000000009",
+        "city": "El Jadida",
+        "province": "El Jadida",
+        "region": "Casablanca-Settat",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "700000000000000000000009",
+        "designation": "Coordonnée géographique - Traiteur El Jadida",
+        "description": "Traiteur professionnel pour restauration et événements à El Jadida",
+        "address": "Avenue Mohamed VI, El Jadida, Maroc",
+        "postal_code": "24000",
+        "email": "contact@traiteur-eljadida.ma",
+        "mobile": "0523358800",
+        "web": "www.traiteur-eljadida.ma",
+        "latitude": 33.2316,
+        "longitude": -8.5007,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "b1b220886505fa02d7b2bf3a",
+          "designation": "Casablanca-Settat",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "43e882bba7b3828dfa6b481f",
+          "designation": "El Jadida",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "7d77cf551610b20f141951e5",
+          "designation": "El Jadida",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64150f0fefffbe5e6725a678",
+            "designation": "Traiteurs & événementiel",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stock_location_70000000000000000000000a",
+      "type": "stock_location_record",
+      "title": "Coordonnée géographique - Industrie laitière Mohammedia",
+      "content": "Point de stock ou fournisseur ProFood: Coordonnée géographique - Industrie laitière Mohammedia. Description: Unité professionnelle de produits laitiers à Mohammedia. Adresse: Zone industrielle Sud-Ouest, Mohammedia, Maroc. Ville: Mohammedia, province: Mohammedia, région: Casablanca-Settat, pays: Maroc. Contact: email contact@laitpro-mohammedia.ma, téléphone 0523327700, web www.laitpro-mohammedia.ma. Coordonnées GPS: latitude 33.6861, longitude -7.3829.",
+      "metadata": {
+        "specialist": "stock",
+        "domain": "stock",
+        "subdomain": "stock_location",
+        "source_file": "coordonneeGeo.json",
+        "source_record_id": "70000000000000000000000a",
+        "city": "Mohammedia",
+        "province": "Mohammedia",
+        "region": "Casablanca-Settat",
+        "country": "Maroc",
+        "language": "fr",
+        "doc_type": "structured_location_stock"
+      },
+      "structured_data": {
+        "location_id": "70000000000000000000000a",
+        "designation": "Coordonnée géographique - Industrie laitière Mohammedia",
+        "description": "Unité professionnelle de produits laitiers à Mohammedia",
+        "address": "Zone industrielle Sud-Ouest, Mohammedia, Maroc",
+        "postal_code": "28810",
+        "email": "contact@laitpro-mohammedia.ma",
+        "mobile": "0523327700",
+        "web": "www.laitpro-mohammedia.ma",
+        "latitude": 33.6861,
+        "longitude": -7.3829,
+        "country": {
+          "id": "b4abf417601643a633947d00",
+          "designation": "Maroc",
+          "domain_id": "a3e4a1286d497877350cefd6",
+          "domain_code": "pays"
+        },
+        "region": {
+          "id": "b1b220886505fa02d7b2bf3a",
+          "designation": "Casablanca-Settat",
+          "domain_id": "a28233bcbfffed0d738495c9",
+          "domain_code": "regionEtat"
+        },
+        "province": {
+          "id": "90c5efb3627074cefbcebbba",
+          "designation": "Mohammedia",
+          "domain_id": "a525489a1e37b46ae52f622a",
+          "domain_code": "provincePrefecture"
+        },
+        "city": {
+          "id": "1184cf64b588a5e71d1b954b",
+          "designation": "Mohammedia",
+          "domain_id": "a4fb77c01ac2d037f0ea146f",
+          "domain_code": "villeProvince"
+        },
+        "sectors": [
+          {
+            "id": "64ef979152a3ca3338d796e8",
+            "designation": "Produits laitiers",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          },
+          {
+            "id": "644fd2a46196ce69b3bb7b32",
+            "designation": "Industrie agroalimentaire",
+            "domain_id": "a94d4cdf77ce3baa37424737",
+            "domain_code": "secteurActivite"
+          }
+        ]
+      }
+    }
+  ]
+}

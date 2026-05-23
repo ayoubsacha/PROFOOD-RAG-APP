@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret: str = ""
     jwt_expires_in: str = "7d"
+    allow_unprotected_ingest: bool = False
 
     # MongoDB for chat history
     mongo_uri: str = ""

@@ -5,7 +5,7 @@ from threading import Event, Thread
 from time import perf_counter
 from typing import Annotated, Any
 
-from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -104,6 +104,18 @@ def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
     return current_user
 
 
+def require_ingest_user(authorization: str | None = Header(default=None)) -> dict:
+    if settings.allow_unprotected_ingest:
+        return {
+            "user_id": "local-ingest",
+            "email": None,
+            "role": "admin",
+            "name": "Local ingest",
+        }
+
+    return require_admin_user(get_current_user(authorization=authorization))
+
+
 def _sse(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -160,7 +172,7 @@ def health() -> dict:
 @app.post("/ingest", response_model=IngestResponse)
 async def ingest(
     reset: bool = True,
-    current_user: dict = Depends(require_admin_user),
+    current_user: dict = Depends(require_ingest_user),
 ) -> dict:
     try:
         return await run_in_threadpool(ingest_pdfs, reset=reset)

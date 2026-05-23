@@ -19,7 +19,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openpyxl import load_workbook
 
 from app.config import settings
-from app.specialists import get_specialist_config, normalize_specialist_id
+from app.specialists import get_out_of_scope_response, get_specialist_config, normalize_specialist_id
 
 
 SPECIALIST_PROMPT = ChatPromptTemplate.from_messages(
@@ -35,7 +35,12 @@ SPECIALIST_PROMPT = ChatPromptTemplate.from_messages(
             "- Utilise le contexte fourni quand il est pertinent.\n"
             "- Si les sources ne contiennent pas assez d'information, dis-le clairement.\n"
             "- N'invente pas de fausses informations.\n"
-            "- Si la question appartient clairement à un autre spécialiste, propose le spécialiste approprié.\n"
+            "- N'invente jamais de noms de spécialistes ProFood.\n"
+            "- Utilise uniquement ces noms officiels: Assistant Général ProFood, Spécialiste Produits Alimentaires, "
+            "Spécialiste Équipements Professionnels, Spécialiste Fournisseurs, Spécialiste Services, "
+            "Spécialiste Catégories et Taxonomies.\n"
+            "- Si la question appartient clairement à un autre spécialiste, ne donne aucune réponse métier, "
+            "même vague. Réponds seulement que l'utilisateur doit consulter le spécialiste officiel approprié.\n"
             "{voice_instruction}",
         ),
         ("human", "Question utilisateur:\n{question}"),
@@ -579,8 +584,21 @@ def split_documents(docs: list[Document]) -> list[Document]:
 def reset_vector_store() -> None:
     global _VECTOR_STORE
 
-    _VECTOR_STORE = None
     chroma_dir = _resolve_path(settings.chroma_dir)
+    chroma_dir.mkdir(parents=True, exist_ok=True)
+
+    vector_store = _VECTOR_STORE
+
+    if vector_store is None and (chroma_dir / "chroma.sqlite3").exists():
+        vector_store = get_vector_store()
+
+    if vector_store is not None:
+        try:
+            vector_store.reset_collection()
+            _VECTOR_STORE = vector_store
+            return
+        except Exception:
+            _VECTOR_STORE = None
 
     if chroma_dir.exists():
         shutil.rmtree(chroma_dir)
@@ -728,6 +746,14 @@ def ask(
     filters: dict[str, Any] | None = None,
     voice_mode: bool = False,
 ) -> dict[str, Any]:
+    out_of_scope_response = get_out_of_scope_response(specialist, question)
+
+    if out_of_scope_response:
+        return {
+            "answer": out_of_scope_response,
+            "sources": [],
+        }
+
     _, specialist_prompt, merged_filters = _resolve_specialist_prompt_and_filters(
         specialist=specialist,
         filters=filters,
@@ -770,6 +796,16 @@ def stream_answer_chunks(
     stop_event: Event | None = None,
 ) -> Iterator[dict[str, Any]]:
     stream_started = time.perf_counter()
+    out_of_scope_response = get_out_of_scope_response(specialist, question)
+
+    if out_of_scope_response:
+        yield {
+            "type": "chunk",
+            "text": out_of_scope_response,
+        }
+        yield {"type": "sources", "sources": []}
+        return
+
     _, specialist_prompt, merged_filters = _resolve_specialist_prompt_and_filters(
         specialist=specialist,
         filters=filters,
