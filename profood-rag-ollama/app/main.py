@@ -5,7 +5,7 @@ from threading import Event, Thread
 from time import perf_counter
 from typing import Annotated, Any
 
-from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -38,8 +38,9 @@ from app.schemas import (
     TtsSpeakResponse,
     VoiceTranscribeResponse,
 )
-from app.tts import text_to_speech
-from app.voice import save_uploaded_audio, transcribe_audio
+from app.specialists import normalize_specialist_id
+from app.tts import cleanup_expired_tts_files, text_to_speech
+from app.voice import delete_audio_file, save_uploaded_audio, transcribe_audio
 
 
 app = FastAPI(
@@ -53,6 +54,7 @@ STATIC_DIR = PROJECT_ROOT / "static"
 TTS_STATIC_DIR = _resolve_path(settings.tts_output_dir)
 TTS_STATIC_DIR.mkdir(parents=True, exist_ok=True)
 _resolve_path(settings.audio_upload_dir).mkdir(parents=True, exist_ok=True)
+cleanup_expired_tts_files()
 
 app.mount("/static/tts", StaticFiles(directory=str(TTS_STATIC_DIR)), name="tts_static")
 if STATIC_DIR.exists():
@@ -82,6 +84,17 @@ app.add_middleware(
 )
 
 
+async def _cleanup_expired_tts_loop() -> None:
+    while True:
+        await asyncio.sleep(max(settings.tts_cleanup_interval_seconds, 60))
+        await run_in_threadpool(cleanup_expired_tts_files)
+
+
+@app.on_event("startup")
+async def start_tts_cleanup_loop() -> None:
+    asyncio.create_task(_cleanup_expired_tts_loop())
+
+
 def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
     role = str(current_user.get("role") or "").strip().lower()
 
@@ -89,6 +102,18 @@ def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
         raise HTTPException(status_code=403, detail="Admin access required.")
 
     return current_user
+
+
+def require_ingest_user(authorization: str | None = Header(default=None)) -> dict:
+    if settings.allow_unprotected_ingest:
+        return {
+            "user_id": "local-ingest",
+            "email": None,
+            "role": "admin",
+            "name": "Local ingest",
+        }
+
+    return require_admin_user(get_current_user(authorization=authorization))
 
 
 def _sse(event: str, data: dict[str, Any]) -> str:
@@ -139,6 +164,7 @@ def health() -> dict:
         "chat_model": settings.ollama_chat_model,
         "embedding_model": settings.ollama_embedding_model,
         "pdf_dir": str(_resolve_path(settings.pdf_dir)),
+        "rag_sources_dir": str(_resolve_path(settings.rag_sources_dir)),
         "chroma_dir": str(_resolve_path(settings.chroma_dir)),
     }
 
@@ -146,7 +172,7 @@ def health() -> dict:
 @app.post("/ingest", response_model=IngestResponse)
 async def ingest(
     reset: bool = True,
-    current_user: dict = Depends(require_admin_user),
+    current_user: dict = Depends(require_ingest_user),
 ) -> dict:
     try:
         return await run_in_threadpool(ingest_pdfs, reset=reset)
@@ -167,9 +193,14 @@ async def create_session(
 ) -> dict:
     user_id = current_user["user_id"]
     title = payload.title if payload else None
+    specialist = payload.specialist if payload else "general"
 
     try:
-        return await create_chat_session(user_id=user_id, title=title)
+        return await create_chat_session(
+            user_id=user_id,
+            title=title,
+            specialist=specialist,
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -245,6 +276,7 @@ async def ask_question(
 ) -> dict:
     try:
         user_id = current_user["user_id"]
+        specialist = normalize_specialist_id(payload.specialist)
 
         print("Current RAG user:", user_id)
 
@@ -252,6 +284,7 @@ async def ask_question(
             user_id=user_id,
             session_id=payload.session_id,
             title=payload.question,
+            specialist=specialist,
         )
         session_id = session["id"]
 
@@ -259,11 +292,13 @@ async def ask_question(
             user_id=user_id,
             session_id=session_id,
             content=payload.question,
+            specialist=specialist,
         )
 
         rag_response = await run_in_threadpool(
             ask,
             question=payload.question,
+            specialist=specialist,
             k=payload.k,
             filters=payload.filters,
         )
@@ -273,6 +308,7 @@ async def ask_question(
             session_id=session_id,
             content=rag_response["answer"],
             sources=rag_response.get("sources", []),
+            specialist=specialist,
         )
 
         return {
@@ -300,10 +336,12 @@ async def ask_image_question(
     session_id: Annotated[str | None, Form()] = None,
     k: Annotated[int | None, Form()] = 4,
     filters: Annotated[str | None, Form()] = None,
+    specialist: Annotated[str, Form()] = "general",
     current_user: dict = Depends(get_current_user),
 ) -> dict:
     try:
         user_id = current_user["user_id"]
+        normalized_specialist = normalize_specialist_id(specialist)
         clean_question = question.strip()
 
         if len(clean_question) < 2:
@@ -333,6 +371,7 @@ async def ask_image_question(
             user_id=user_id,
             session_id=session_id,
             title=clean_question,
+            specialist=normalized_specialist,
         )
         resolved_session_id = session["id"]
 
@@ -340,12 +379,14 @@ async def ask_image_question(
             user_id=user_id,
             session_id=resolved_session_id,
             content=f"{clean_question}\n\n[Image attached for ProFood visual analysis.]",
+            specialist=normalized_specialist,
         )
 
         rag_started = perf_counter()
         rag_response = await run_in_threadpool(
             ask,
             question=enhanced_question,
+            specialist=normalized_specialist,
             k=k,
             filters=parsed_filters,
         )
@@ -356,6 +397,7 @@ async def ask_image_question(
             session_id=resolved_session_id,
             content=rag_response["answer"],
             sources=rag_response.get("sources", []),
+            specialist=normalized_specialist,
         )
 
         return {
@@ -396,12 +438,15 @@ async def ask_question_stream(
         stop_event: Event | None = None
 
         try:
+            specialist = normalize_specialist_id(payload.specialist)
+
             print("Current streaming RAG user:", user_id)
 
             session = await ensure_chat_session(
                 user_id=user_id,
                 session_id=payload.session_id,
                 title=payload.question,
+                specialist=specialist,
             )
             session_id = session["id"]
 
@@ -409,6 +454,7 @@ async def ask_question_stream(
                 user_id=user_id,
                 session_id=session_id,
                 content=payload.question,
+                specialist=specialist,
             )
 
             yield _sse("session", {"session_id": session_id})
@@ -425,6 +471,7 @@ async def ask_question_stream(
                 try:
                     for item in stream_answer_chunks(
                         question=payload.question,
+                        specialist=specialist,
                         k=payload.k,
                         filters=payload.filters,
                         voice_mode=payload.voice_mode,
@@ -476,6 +523,7 @@ async def ask_question_stream(
                     session_id=session_id,
                     content=answer,
                     sources=sources,
+                    specialist=specialist,
                 )
 
             yield _sse("done", {"session_id": session_id})
@@ -504,6 +552,8 @@ async def voice_transcribe(
     file: Annotated[UploadFile, File(...)],
     current_user: dict = Depends(get_current_user),
 ) -> dict:
+    audio_path: Path | None = None
+
     try:
         upload_started = perf_counter()
         audio_path = await save_uploaded_audio(file)
@@ -520,6 +570,8 @@ async def voice_transcribe(
             status_code=500,
             detail=f"Voice transcription failed. Original error: {exc}",
         ) from exc
+    finally:
+        await run_in_threadpool(delete_audio_file, audio_path)
 
 
 @app.post("/tts/speak", response_model=TtsSpeakResponse)

@@ -19,46 +19,56 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openpyxl import load_workbook
 
 from app.config import settings
+from app.specialists import get_out_of_scope_response, get_specialist_config, normalize_specialist_id
 
 
-PROMPT = ChatPromptTemplate.from_messages(
+SPECIALIST_PROMPT = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are Profood AI, a helpful assistant for a Moroccan marketplace app "
-            "that contains food products, agriculture products, equipment, suppliers, "
-            "articles, and forum knowledge.\n\n"
-            "Rules:\n"
-            "1. Answer using ONLY the context provided.\n"
-            "2. If the context is not enough, say that Profood does not have enough data yet.\n"
-            "3. Be practical and clear.\n"
-            "4. When useful, mention which product/equipment/forum source supports the answer.\n"
-            "5. Do not invent prices, sellers, or availability.\n\n"
-            "Context:\n{context}",
+            "{specialist_prompt}\n\n"
+            "Contexte extrait des sources ProFood:\n"
+            "{context}\n\n"
+            "Consignes:\n"
+            "- Réponds dans la langue de l'utilisateur.\n"
+            "- Réponds de manière claire, utile et professionnelle.\n"
+            "- Utilise le contexte fourni quand il est pertinent.\n"
+            "- Si les sources ne contiennent pas assez d'information, dis-le clairement.\n"
+            "- N'invente pas de fausses informations.\n"
+            "- N'invente jamais de noms de spécialistes ProFood.\n"
+            "- Utilise uniquement ces noms officiels: Assistant Général ProFood, Spécialiste Produits Alimentaires, "
+            "Spécialiste Équipements Professionnels, Spécialiste Fournisseurs, Spécialiste Services, "
+            "Spécialiste Catégories et Taxonomies.\n"
+            "- Si la question appartient clairement à un autre spécialiste, ne donne aucune réponse métier, "
+            "même vague. Réponds seulement que l'utilisateur doit consulter le spécialiste officiel approprié.\n"
+            "{voice_instruction}",
         ),
-        ("human", "Question: {question}"),
+        ("human", "Question utilisateur:\n{question}"),
     ]
 )
 
-VOICE_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are Profood AI, a helpful assistant for a Moroccan marketplace app "
-            "that contains food products, agriculture products, equipment, suppliers, "
-            "articles, and forum knowledge.\n\n"
-            "Rules:\n"
-            "1. Answer using ONLY the context provided.\n"
-            "2. If the context is not enough, say that Profood does not have enough data yet.\n"
-            "3. Be practical and clear.\n"
-            "4. When useful, mention which product/equipment/forum source supports the answer.\n"
-            "5. Do not invent prices, sellers, or availability.\n"
-            "6. Answer in French. Use 2 to 4 short sentences. Be direct, clear, and suitable for spoken audio.\n\n"
-            "Context:\n{context}",
-        ),
-        ("human", "Question: {question}"),
-    ]
-)
+SPECIALIST_FOLDER_MAP = {
+    "general": ("general", "general"),
+    "food": ("food", "food"),
+    "equipment": ("equipment", "equipment"),
+    "suppliers": ("supplier", "supplier"),
+    "services": ("services", "services"),
+    "taxonomy": ("taxonomy", "taxonomy"),
+    "faq": ("general", "faq"),
+}
+
+SUPPORTED_FILE_EXTENSIONS = {
+    ".pdf",
+    ".txt",
+    ".md",
+    ".json",
+    ".csv",
+    ".docx",
+    ".xlsx",
+    ".xlsm",
+    ".xltx",
+    ".xltm",
+}
 
 _EMBEDDINGS: OllamaEmbeddings | None = None
 _LLM: ChatOllama | None = None
@@ -138,6 +148,59 @@ def _guess_doc_type(source_path: str) -> str:
         return "article"
 
     return "document"
+
+
+def _infer_specialist_metadata(file_path: Path, root_dir: Path, infer_from_folder: bool) -> dict[str, str]:
+    specialist = "general"
+    domain = "general"
+
+    if infer_from_folder:
+        try:
+            relative_path = file_path.resolve().relative_to(root_dir.resolve())
+            folder_name = relative_path.parts[0].lower() if relative_path.parts else "general"
+        except ValueError:
+            folder_name = "general"
+
+        specialist, domain = SPECIALIST_FOLDER_MAP.get(folder_name, ("general", folder_name or "general"))
+
+    return {
+        "specialist": specialist,
+        "domain": domain,
+        "category": "general",
+        "language": "fr",
+    }
+
+
+def _enrich_document_metadata(
+    doc: Document,
+    file_path: Path,
+    root_dir: Path,
+    infer_from_folder: bool,
+) -> Document:
+    source_metadata = _infer_specialist_metadata(file_path, root_dir, infer_from_folder)
+    original_source = doc.metadata.get("source")
+
+    doc.metadata.update(source_metadata)
+    doc.metadata["source"] = file_path.name
+    doc.metadata["source_file"] = file_path.name
+    doc.metadata["source_path"] = str(file_path)
+    doc.metadata["file_type"] = file_path.suffix.lower()
+    doc.metadata["doc_type"] = str(doc.metadata.get("doc_type") or _guess_doc_type(file_path.name))
+
+    if original_source and "original_source" not in doc.metadata:
+        doc.metadata["original_source"] = original_source
+
+    return doc
+
+
+def _is_supported_data_file(file_path: Path) -> bool:
+    if not file_path.is_file():
+        return False
+
+    if file_path.name.lower() == "readme.md":
+        return False
+
+    return file_path.suffix.lower() in SUPPORTED_FILE_EXTENSIONS
 
 
 def _dict_to_text(data: dict[str, Any]) -> str:
@@ -433,44 +496,27 @@ def _load_excel_file(file_path: Path) -> list[Document]:
     return docs
 
 
-def load_documents() -> list[Document]:
-    """
-    Load all supported documents from the documents folder.
-
-    Currently the folder comes from:
-    settings.pdf_dir
-
-    Even if the name is pdf_dir, it can now contain:
-    - PDF
-    - TXT
-    - Markdown
-    - JSON
-    - CSV
-    - DOCX
-    - Excel
-    """
-
-    documents_dir = _resolve_path(settings.pdf_dir)
+def _load_documents_from_directory(
+    documents_dir: Path,
+    infer_from_folder: bool,
+) -> list[Document]:
     documents_dir.mkdir(parents=True, exist_ok=True)
-
     docs: list[Document] = []
 
-    # 1. Load PDF files
     pdf_loader = PyPDFDirectoryLoader(str(documents_dir))
     pdf_docs = pdf_loader.load()
 
     for doc in pdf_docs:
-        source = doc.metadata.get("source", "")
+        source = doc.metadata.get("source")
+        source_path = Path(source) if source else documents_dir / "unknown.pdf"
 
-        doc.metadata["doc_type"] = _guess_doc_type(source)
-        doc.metadata["source_file"] = Path(source).name if source else "unknown"
-        doc.metadata["file_type"] = ".pdf"
+        if not source_path.is_absolute():
+            source_path = documents_dir / source_path
 
-    docs.extend(pdf_docs)
+        docs.append(_enrich_document_metadata(doc, source_path, documents_dir, infer_from_folder))
 
-    # 2. Load other supported file types
     for file_path in documents_dir.rglob("*"):
-        if not file_path.is_file():
+        if not _is_supported_data_file(file_path):
             continue
 
         suffix = file_path.suffix.lower()
@@ -478,20 +524,49 @@ def load_documents() -> list[Document]:
         if suffix == ".pdf":
             continue
 
+        file_docs: list[Document] = []
+
         if suffix in {".txt", ".md"}:
-            docs.extend(_load_text_file(file_path))
+            file_docs = _load_text_file(file_path)
 
         elif suffix == ".json":
-            docs.extend(_load_json_file(file_path))
+            file_docs = _load_json_file(file_path)
 
         elif suffix == ".csv":
-            docs.extend(_load_csv_file(file_path))
+            file_docs = _load_csv_file(file_path)
 
         elif suffix == ".docx":
-            docs.extend(_load_docx_file(file_path))
+            file_docs = _load_docx_file(file_path)
 
         elif suffix in {".xlsx", ".xlsm", ".xltx", ".xltm"}:
-            docs.extend(_load_excel_file(file_path))
+            file_docs = _load_excel_file(file_path)
+
+        docs.extend(
+            _enrich_document_metadata(doc, file_path, documents_dir, infer_from_folder)
+            for doc in file_docs
+        )
+
+    return docs
+
+
+def load_documents() -> list[Document]:
+    """
+    Load supported RAG documents from the multi-specialist source tree.
+
+    Preferred source:
+    - settings.rag_sources_dir, where the first folder name identifies the specialist.
+
+    Backward-compatible source:
+    - settings.pdf_dir, loaded as general ProFood knowledge.
+    """
+
+    rag_sources_dir = _resolve_path(settings.rag_sources_dir)
+    legacy_documents_dir = _resolve_path(settings.pdf_dir)
+
+    docs = _load_documents_from_directory(rag_sources_dir, infer_from_folder=True)
+
+    if legacy_documents_dir.resolve() != rag_sources_dir.resolve():
+        docs.extend(_load_documents_from_directory(legacy_documents_dir, infer_from_folder=False))
 
     return docs
 
@@ -509,8 +584,21 @@ def split_documents(docs: list[Document]) -> list[Document]:
 def reset_vector_store() -> None:
     global _VECTOR_STORE
 
-    _VECTOR_STORE = None
     chroma_dir = _resolve_path(settings.chroma_dir)
+    chroma_dir.mkdir(parents=True, exist_ok=True)
+
+    vector_store = _VECTOR_STORE
+
+    if vector_store is None and (chroma_dir / "chroma.sqlite3").exists():
+        vector_store = get_vector_store()
+
+    if vector_store is not None:
+        try:
+            vector_store.reset_collection()
+            _VECTOR_STORE = vector_store
+            return
+        except Exception:
+            _VECTOR_STORE = None
 
     if chroma_dir.exists():
         shutil.rmtree(chroma_dir)
@@ -542,7 +630,7 @@ def ingest_pdfs(reset: bool = True) -> dict[str, Any]:
 
     if not chunks:
         return {
-            "message": "No document content found. Add PDF, TXT, MD, JSON, CSV, DOCX, or Excel files and try again.",
+            "message": "No document content found. Add files to data/rag_sources or data/pdfs and try again.",
             "loaded_documents": 0,
             "created_chunks": 0,
             "chroma_dir": str(_resolve_path(settings.chroma_dir)),
@@ -553,7 +641,7 @@ def ingest_pdfs(reset: bool = True) -> dict[str, Any]:
     vector_store.add_documents(chunks)
 
     return {
-        "message": "Documents ingested successfully.",
+        "message": "Documents ingested successfully with specialist metadata.",
         "loaded_documents": len(docs),
         "created_chunks": len(chunks),
         "chroma_dir": str(_resolve_path(settings.chroma_dir)),
@@ -617,6 +705,28 @@ def retrieve_documents(
     return docs
 
 
+def _resolve_specialist_prompt_and_filters(
+    specialist: str,
+    filters: dict[str, Any] | None,
+) -> tuple[str, str, dict[str, Any] | None]:
+    normalized_specialist = normalize_specialist_id(specialist)
+    specialist_config = get_specialist_config(normalized_specialist)
+    specialist_filters = specialist_config["filters"]
+    merged_filters = {
+        **(filters or {}),
+        **specialist_filters,
+    }
+
+    return normalized_specialist, specialist_config["prompt"], merged_filters or None
+
+
+def _voice_instruction(voice_mode: bool) -> str:
+    if not voice_mode:
+        return ""
+
+    return "\n- Pour le mode vocal, réponds en français avec 2 à 4 phrases courtes, directes et faciles à écouter."
+
+
 def _chunk_text(chunk: Any) -> str:
     content = getattr(chunk, "content", "")
 
@@ -631,11 +741,24 @@ def _chunk_text(chunk: Any) -> str:
 
 def ask(
     question: str,
+    specialist: str = "general",
     k: int | None = None,
     filters: dict[str, Any] | None = None,
     voice_mode: bool = False,
 ) -> dict[str, Any]:
-    docs = retrieve_documents(question=question, k=k, filters=filters)
+    out_of_scope_response = get_out_of_scope_response(specialist, question)
+
+    if out_of_scope_response:
+        return {
+            "answer": out_of_scope_response,
+            "sources": [],
+        }
+
+    _, specialist_prompt, merged_filters = _resolve_specialist_prompt_and_filters(
+        specialist=specialist,
+        filters=filters,
+    )
+    docs = retrieve_documents(question=question, k=k, filters=merged_filters)
 
     if not docs:
         return {
@@ -644,15 +767,16 @@ def ask(
         }
 
     context = _format_context(docs)
-    prompt = VOICE_PROMPT if voice_mode else PROMPT
 
-    chain = prompt | get_llm()
+    chain = SPECIALIST_PROMPT | get_llm()
     generation_started = time.perf_counter()
 
     response = chain.invoke(
         {
+            "specialist_prompt": specialist_prompt,
             "context": context,
             "question": question,
+            "voice_instruction": _voice_instruction(voice_mode),
         }
     )
     print(f"[timing] total LLM generation time: {time.perf_counter() - generation_started:.3f}s")
@@ -665,13 +789,28 @@ def ask(
 
 def stream_answer_chunks(
     question: str,
+    specialist: str = "general",
     k: int | None = None,
     filters: dict[str, Any] | None = None,
     voice_mode: bool = False,
     stop_event: Event | None = None,
 ) -> Iterator[dict[str, Any]]:
     stream_started = time.perf_counter()
-    docs = retrieve_documents(question=question, k=k, filters=filters)
+    out_of_scope_response = get_out_of_scope_response(specialist, question)
+
+    if out_of_scope_response:
+        yield {
+            "type": "chunk",
+            "text": out_of_scope_response,
+        }
+        yield {"type": "sources", "sources": []}
+        return
+
+    _, specialist_prompt, merged_filters = _resolve_specialist_prompt_and_filters(
+        specialist=specialist,
+        filters=filters,
+    )
+    docs = retrieve_documents(question=question, k=k, filters=merged_filters)
 
     if not docs:
         yield {
@@ -682,15 +821,16 @@ def stream_answer_chunks(
         return
 
     context = _format_context(docs)
-    prompt = VOICE_PROMPT if voice_mode else PROMPT
-    chain = prompt | get_llm()
+    chain = SPECIALIST_PROMPT | get_llm()
     generation_started = time.perf_counter()
     first_token_logged = False
 
     for chunk in chain.stream(
         {
+            "specialist_prompt": specialist_prompt,
             "context": context,
             "question": question,
+            "voice_instruction": _voice_instruction(voice_mode),
         }
     ):
         if stop_event and stop_event.is_set():

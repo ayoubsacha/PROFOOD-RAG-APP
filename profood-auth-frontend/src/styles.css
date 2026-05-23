@@ -10,7 +10,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font-family: inherit;
 }
 
@@ -34,7 +35,8 @@ app-chatbot-widget {
 }
 
 app-chatbot-widget button,
-app-chatbot-widget input {
+app-chatbot-widget input,
+app-chatbot-widget select {
   font: inherit;
 }
 
@@ -2035,6 +2037,67 @@ app-chatbot-widget .image-description p {
   margin: 8px 0 0;
   font-size: 13px;
   line-height: 1.5;
+}
+
+app-chatbot-widget .specialist-select {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: rgba(245, 247, 251, 0.76);
+  font-size: 13px;
+}
+
+app-chatbot-widget .specialist-select span {
+  font-weight: 800;
+}
+
+app-chatbot-widget .specialist-select select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 13px;
+  padding: 0 38px 0 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(16, 21, 29, 0.66);
+  color: #f5f7fb;
+  outline: none;
+}
+
+app-chatbot-widget .specialist-select select:focus {
+  border-color: rgba(57, 226, 222, 0.48);
+  box-shadow: 0 0 0 3px rgba(57, 226, 222, 0.1);
+}
+
+app-chatbot-widget .specialist-select option {
+  background: #151a22;
+  color: #f5f7fb;
+}
+
+app-chatbot-widget .session-copy em,
+app-chatbot-widget .message-meta em,
+app-chatbot-widget .active-specialist {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(57, 226, 222, 0.22);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(57, 226, 222, 0.08);
+  color: #aee9e0;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+app-chatbot-widget .active-specialist {
+  justify-self: center;
+  margin-top: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 @media (max-width: 680px) {

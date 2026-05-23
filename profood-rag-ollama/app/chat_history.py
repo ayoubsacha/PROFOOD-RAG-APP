@@ -7,6 +7,7 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from app.db import get_chat_sessions_collection
+from app.specialists import normalize_specialist_id
 
 
 class ChatSessionNotFound(Exception):
@@ -43,6 +44,7 @@ def _serialize_message(message: dict[str, Any]) -> dict[str, Any]:
         "content": message.get("content"),
         "sources": message.get("sources") or [],
         "created_at": message.get("created_at"),
+        "specialist": message.get("specialist"),
     }
 
 
@@ -53,6 +55,7 @@ def _serialize_session(document: dict[str, Any]) -> dict[str, Any]:
         "id": str(document["_id"]),
         "title": document.get("title") or "New chat",
         "user_id": document["user_id"],
+        "specialist": document.get("specialist"),
         "messages": [_serialize_message(message) for message in messages],
         "message_count": len(messages),
         "last_message": _message_preview(messages),
@@ -70,13 +73,19 @@ def _title_from_question(question: str | None) -> str:
     return clean_question[:80]
 
 
-async def create_chat_session(user_id: str, title: str | None = None) -> dict[str, Any]:
+async def create_chat_session(
+    user_id: str,
+    title: str | None = None,
+    specialist: str | None = "general",
+) -> dict[str, Any]:
     collection = get_chat_sessions_collection()
     now = _now()
+    normalized_specialist = normalize_specialist_id(specialist)
 
     document = {
         "user_id": user_id,
         "title": _title_from_question(title),
+        "specialist": normalized_specialist,
         "messages": [],
         "created_at": now,
         "updated_at": now,
@@ -115,22 +124,44 @@ async def ensure_chat_session(
     user_id: str,
     session_id: str | None,
     title: str | None = None,
+    specialist: str | None = "general",
 ) -> dict[str, Any]:
+    normalized_specialist = normalize_specialist_id(specialist)
+
     if not session_id:
-        return await create_chat_session(user_id=user_id, title=title)
+        return await create_chat_session(
+            user_id=user_id,
+            title=title,
+            specialist=normalized_specialist,
+        )
 
     session = await get_chat_session(user_id=user_id, session_id=session_id)
 
     if not session:
         raise ChatSessionNotFound("Chat session not found")
 
+    if session.get("specialist") != normalized_specialist:
+        collection = get_chat_sessions_collection()
+        object_id = _to_object_id(session_id)
+        await collection.update_one(
+            {"_id": object_id, "user_id": user_id},
+            {"$set": {"specialist": normalized_specialist, "updated_at": _now()}},
+        )
+        session["specialist"] = normalized_specialist
+
     return session
 
 
-async def add_user_message(user_id: str, session_id: str, content: str) -> None:
+async def add_user_message(
+    user_id: str,
+    session_id: str,
+    content: str,
+    specialist: str | None = "general",
+) -> None:
     collection = get_chat_sessions_collection()
     object_id = _to_object_id(session_id)
     now = _now()
+    normalized_specialist = normalize_specialist_id(specialist)
 
     result = await collection.update_one(
         {"_id": object_id, "user_id": user_id},
@@ -141,9 +172,10 @@ async def add_user_message(user_id: str, session_id: str, content: str) -> None:
                     "content": content,
                     "sources": [],
                     "created_at": now,
+                    "specialist": normalized_specialist,
                 }
             },
-            "$set": {"updated_at": now},
+            "$set": {"updated_at": now, "specialist": normalized_specialist},
         },
     )
 
@@ -156,10 +188,12 @@ async def add_assistant_message(
     session_id: str,
     content: str,
     sources: list[dict[str, Any]],
+    specialist: str | None = "general",
 ) -> None:
     collection = get_chat_sessions_collection()
     object_id = _to_object_id(session_id)
     now = _now()
+    normalized_specialist = normalize_specialist_id(specialist)
 
     result = await collection.update_one(
         {"_id": object_id, "user_id": user_id},
@@ -170,9 +204,10 @@ async def add_assistant_message(
                     "content": content,
                     "sources": sources,
                     "created_at": now,
+                    "specialist": normalized_specialist,
                 }
             },
-            "$set": {"updated_at": now},
+            "$set": {"updated_at": now, "specialist": normalized_specialist},
         },
     )
 

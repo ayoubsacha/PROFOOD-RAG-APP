@@ -83,3 +83,15 @@ def transcribe_audio(file_path: str | Path) -> str:
     transcript_parts = [segment.text.strip() for segment in segments if segment.text.strip()]
 
     return " ".join(transcript_parts).strip()
+
+
+def delete_audio_file(file_path: str | Path | None) -> None:
+    if not file_path:
+        return
+
+    path = Path(file_path)
+
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        print(f"[voice:cleanup] failed to delete uploaded audio {path}: {exc}")

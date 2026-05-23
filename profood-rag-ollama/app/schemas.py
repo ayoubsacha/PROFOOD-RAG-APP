@@ -6,8 +6,9 @@ from pydantic import BaseModel, Field
 
 class AskRequest(BaseModel):
     question: str = Field(..., min_length=2, examples=["What equipment do I need for olive oil production?"])
-    k: int | None = Field(default=None, ge=1, le=20, description="Number of chunks to retrieve")
     session_id: str | None = Field(default=None, description="Optional chat session id")
+    specialist: str = Field(default="general", description="Selected ProFood AI specialist id")
+    k: int | None = Field(default=None, ge=1, le=20, description="Number of chunks to retrieve")
     filters: dict[str, Any] | None = Field(
         default=None,
         description="Optional Chroma metadata filter. Example: {'doc_type': 'equipment'}",
@@ -32,7 +33,7 @@ class SourceChunk(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     sources: list[SourceChunk]
-    session_id: str
+    session_id: str | None = None
 
 
 class ImageAskResponse(BaseModel):
@@ -64,6 +65,7 @@ class IngestResponse(BaseModel):
 
 class ChatSessionCreateRequest(BaseModel):
     title: str | None = Field(default=None, max_length=120)
+    specialist: str = "general"
 
 
 class ChatMessage(BaseModel):
@@ -71,12 +73,14 @@ class ChatMessage(BaseModel):
     content: str
     sources: list[SourceChunk] = Field(default_factory=list)
     created_at: datetime
+    specialist: str | None = None
 
 
 class ChatSessionSummary(BaseModel):
     id: str
     title: str
     user_id: str
+    specialist: str | None = None
     message_count: int
     last_message: str | None = None
     created_at: datetime

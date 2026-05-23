@@ -15,9 +15,16 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   sources?: SourceChunk[];
+  specialist?: string | null;
   imagePreview?: string;
   imageDescription?: string;
   showImageDescription?: boolean;
+}
+
+interface ChatSpecialist {
+  id: string;
+  name: string;
+  shortName: string;
 }
 
 type VoiceRecordingMode = 'dictate' | 'voice-chat';
@@ -46,6 +53,15 @@ export class ChatbotWidgetComponent implements OnInit {
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
   messages: ChatMessage[] = [];
+  selectedSpecialist = 'general';
+  readonly specialists: ChatSpecialist[] = [
+    { id: 'general', name: 'Assistant Général ProFood', shortName: 'Général' },
+    { id: 'food', name: 'Produits Alimentaires', shortName: 'Food' },
+    { id: 'equipment', name: 'Équipements Professionnels', shortName: 'Équipements' },
+    { id: 'supplier', name: 'Fournisseurs', shortName: 'Fournisseurs' },
+    { id: 'services', name: 'Services', shortName: 'Services' },
+    { id: 'taxonomy', name: 'Catégories et Taxonomies', shortName: 'Taxonomies' }
+  ];
   private readonly allowedImageTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
   private readonly maxImageBytes = 5 * 1024 * 1024;
   private readonly silenceThreshold = 0.04;
@@ -119,6 +135,19 @@ export class ChatbotWidgetComponent implements OnInit {
     return this.messages.length === 0;
   }
 
+  get selectedSpecialistName(): string {
+    return this.getSpecialistLabel(this.selectedSpecialist);
+  }
+
+  getSpecialistLabel(specialistId?: string | null): string {
+    return this.specialists.find((specialist) => specialist.id === specialistId)?.shortName || 'Général';
+  }
+
+  choosePrompt(prompt: string, specialist: string): void {
+    this.selectedSpecialist = specialist;
+    this.question = prompt;
+  }
+
   toggleChat(): void {
     this.isOpen = !this.isOpen;
 
@@ -145,7 +174,7 @@ export class ChatbotWidgetComponent implements OnInit {
     this.clearSelectedImage();
     this.sessionsLoading = true;
 
-    this.chatbotService.createSession('New chat').subscribe({
+    this.chatbotService.createSession('New chat', this.selectedSpecialist).subscribe({
       next: (session) => {
         this.sessions = [session, ...this.sessions.filter((item) => item.id !== session.id)];
         this.currentSessionId = session.id;
@@ -255,7 +284,8 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.messages.push({
       role: 'user',
-      text: cleanQuestion
+      text: cleanQuestion,
+      specialist: this.selectedSpecialist
     });
 
     this.question = '';
@@ -265,7 +295,8 @@ export class ChatbotWidgetComponent implements OnInit {
     const assistantMessage: ChatMessage = {
       role: 'assistant',
       text: '',
-      sources: []
+      sources: [],
+      specialist: this.selectedSpecialist
     };
     const abortController = new AbortController();
 
@@ -278,6 +309,7 @@ export class ChatbotWidgetComponent implements OnInit {
         k: 4,
         filters: null,
         session_id: this.currentSessionId,
+        specialist: this.selectedSpecialist,
         voice_mode: false
       },
       {
@@ -354,6 +386,7 @@ export class ChatbotWidgetComponent implements OnInit {
     this.messages.push({
       role: 'user',
       text: cleanQuestion,
+      specialist: this.selectedSpecialist,
       imagePreview: previewUrl
     });
 
@@ -367,13 +400,14 @@ export class ChatbotWidgetComponent implements OnInit {
       role: 'assistant',
       text: '',
       sources: [],
+      specialist: this.selectedSpecialist,
       showImageDescription: false
     };
 
     this.messages.push(assistantMessage);
     this.refreshStreamingView();
 
-    this.chatbotService.askImage(imageFile, cleanQuestion, this.currentSessionId).subscribe({
+    this.chatbotService.askImage(imageFile, cleanQuestion, this.currentSessionId, this.selectedSpecialist).subscribe({
       next: (response) => {
         if (response.session_id) {
           this.currentSessionId = response.session_id;
@@ -457,12 +491,14 @@ export class ChatbotWidgetComponent implements OnInit {
   private applySession(session: ChatSession): void {
     this.currentSessionId = session.id;
     this.statusMessage = '';
+    this.selectedSpecialist = session.specialist || this.selectedSpecialist;
 
     this.messages = session.messages.length
       ? session.messages.map((message) => ({
           role: message.role,
           text: message.content,
-          sources: message.sources || []
+          sources: message.sources || [],
+          specialist: message.specialist || session.specialist || null
         }))
       : [];
   }
@@ -693,7 +729,8 @@ export class ChatbotWidgetComponent implements OnInit {
 
         this.messages.push({
           role: 'user',
-          text: transcript
+          text: transcript,
+          specialist: this.selectedSpecialist
         });
         this.refreshStreamingView();
 
@@ -726,7 +763,8 @@ export class ChatbotWidgetComponent implements OnInit {
     const assistantMessage: ChatMessage = {
       role: 'assistant',
       text: '',
-      sources: []
+      sources: [],
+      specialist: this.selectedSpecialist
     };
 
     this.messages.push(assistantMessage);
@@ -740,6 +778,7 @@ export class ChatbotWidgetComponent implements OnInit {
         k: 4,
         filters: null,
         session_id: this.currentSessionId,
+        specialist: this.selectedSpecialist,
         voice_mode: true
       },
       {
