@@ -35,15 +35,6 @@
       </svg>
     </div>
 
-    <label class="specialist-select">
-      <span>Spécialiste</span>
-      <select name="specialist" [(ngModel)]="selectedSpecialist" [disabled]="isBusy">
-        <option *ngFor="let specialist of specialists" [value]="specialist.id">
-          {{ specialist.name }}
-        </option>
-      </select>
-    </label>
-
     <button class="new-session" type="button" (click)="startNewSession()" [disabled]="sessionsLoading">
       <span aria-hidden="true">+</span>
       Nouvelle conversation
@@ -334,21 +325,6 @@
     </div>
 
     <form class="chat-input" (ngSubmit)="submitChat()">
-      <div class="input-chip" aria-hidden="true">
-        <span></span>
-        <strong>RAG Mode</strong>
-        <small>Active</small>
-      </div>
-
-      <input
-        type="text"
-        name="question"
-        [(ngModel)]="question"
-        placeholder="Message ProFood..."
-        autocomplete="off"
-        [disabled]="voiceConversationActive || recordingMode === 'voice-chat'"
-      />
-
       <input
         #imageInput
         class="image-file-input"
@@ -373,6 +349,15 @@
           <circle cx="8" cy="9" r="1"></circle>
         </svg>
       </button>
+
+      <input
+        type="text"
+        name="question"
+        [(ngModel)]="question"
+        placeholder="Message ProFood..."
+        autocomplete="off"
+        [disabled]="voiceConversationActive || recordingMode === 'voice-chat'"
+      />
 
       <button
         class="icon-control dictate-control"
@@ -408,6 +393,34 @@
 
         <span class="stop-square" *ngIf="voiceConversationActive || recordingMode === 'voice-chat' || voiceChatLoading || assistantSpeaking"></span>
       </button>
+
+      <div class="model-picker" [class.open]="isSpecialistMenuOpen">
+        <button
+          class="model-trigger"
+          type="button"
+          (click)="toggleSpecialistMenu()"
+          [disabled]="isBusy"
+          aria-label="Choisir un spécialiste ProFood"
+          [attr.aria-expanded]="isSpecialistMenuOpen"
+        >
+          <span>{{ selectedSpecialistName }}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+
+        <div class="model-menu" *ngIf="isSpecialistMenuOpen">
+          <button
+            class="model-option"
+            type="button"
+            *ngFor="let specialist of specialists"
+            [class.active]="specialist.id === selectedSpecialist"
+            (click)="selectSpecialist(specialist.id)"
+          >
+            {{ getSpecialistLabel(specialist.id) }}
+          </button>
+        </div>
+      </div>
 
       <button class="send-button" type="submit" [disabled]="isBusy || recordingMode !== null || voiceConversationActive || (!selectedImageFile && !question.trim())" aria-label="Send message">
         <svg viewBox="0 0 24 24" aria-hidden="true">

@@ -25,6 +25,7 @@ interface ChatSpecialist {
   id: string;
   name: string;
   shortName: string;
+  icon: string;
 }
 
 type VoiceRecordingMode = 'dictate' | 'voice-chat';
@@ -49,18 +50,19 @@ export class ChatbotWidgetComponent implements OnInit {
   recordingMode: VoiceRecordingMode | null = null;
   voiceConversationActive = false;
   assistantSpeaking = false;
+  isSpecialistMenuOpen = false;
 
   currentSessionId: string | null = null;
   sessions: ChatSessionSummary[] = [];
   messages: ChatMessage[] = [];
   selectedSpecialist = 'general';
   readonly specialists: ChatSpecialist[] = [
-    { id: 'general', name: 'Assistant Général ProFood', shortName: 'Général' },
-    { id: 'food', name: 'Produits Alimentaires', shortName: 'Food' },
-    { id: 'equipment', name: 'Équipements Professionnels', shortName: 'Équipements' },
-    { id: 'supplier', name: 'Fournisseurs', shortName: 'Fournisseurs' },
-    { id: 'services', name: 'Services', shortName: 'Services' },
-    { id: 'taxonomy', name: 'Catégories et Taxonomies', shortName: 'Taxonomies' }
+    { id: 'general', name: 'Assistant Général ProFood', shortName: 'Général', icon: '🤖' },
+    { id: 'food', name: 'Produits Alimentaires', shortName: 'Produits', icon: '🥫' },
+    { id: 'equipment', name: 'Équipements Professionnels', shortName: 'Équipements', icon: '⚙️' },
+    { id: 'supplier', name: 'Fournisseurs', shortName: 'Fournisseurs', icon: '🤝' },
+    { id: 'services', name: 'Services', shortName: 'Services', icon: '🛠️' },
+    { id: 'taxonomy', name: 'Catégories et Taxonomies', shortName: 'Taxonomies', icon: '🗂️' }
   ];
   private readonly allowedImageTypes = new Set(['image/png', 'image/jpeg', 'image/webp']);
   private readonly maxImageBytes = 5 * 1024 * 1024;
@@ -140,12 +142,26 @@ export class ChatbotWidgetComponent implements OnInit {
   }
 
   getSpecialistLabel(specialistId?: string | null): string {
-    return this.specialists.find((specialist) => specialist.id === specialistId)?.shortName || 'Général';
+    const specialist = this.specialists.find((item) => item.id === specialistId) || this.specialists[0];
+
+    return `${specialist.icon} ${specialist.shortName}`;
   }
 
   choosePrompt(prompt: string, specialist: string): void {
     this.selectedSpecialist = specialist;
+    this.isSpecialistMenuOpen = false;
     this.question = prompt;
+  }
+
+  toggleSpecialistMenu(): void {
+    if (this.isBusy) return;
+
+    this.isSpecialistMenuOpen = !this.isSpecialistMenuOpen;
+  }
+
+  selectSpecialist(specialistId: string): void {
+    this.selectedSpecialist = specialistId;
+    this.isSpecialistMenuOpen = false;
   }
 
   toggleChat(): void {
@@ -223,6 +239,8 @@ export class ChatbotWidgetComponent implements OnInit {
   }
 
   submitChat(): void {
+    this.isSpecialistMenuOpen = false;
+
     if (this.selectedImageFile) {
       this.sendImageMessage();
       return;
