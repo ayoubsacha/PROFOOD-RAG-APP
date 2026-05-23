@@ -15,7 +15,15 @@ export interface SourceChunk {
 export interface AskResponse {
   answer: string;
   sources: SourceChunk[];
-  session_id: string;
+  session_id: string | null;
+}
+
+export interface AskRequest {
+  question: string;
+  session_id?: string | null;
+  specialist?: string;
+  k?: number;
+  filters?: Record<string, any> | null;
 }
 
 export interface ImageAskResponse {
@@ -36,6 +44,7 @@ export interface TtsSpeakResponse {
 export interface AskStreamPayload {
   question: string;
   session_id?: string | null;
+  specialist?: string;
   k?: number | null;
   filters?: Record<string, any> | null;
   voice_mode?: boolean;
@@ -53,12 +62,14 @@ export interface ChatSessionMessage {
   content: string;
   sources: SourceChunk[];
   created_at: string;
+  specialist?: string | null;
 }
 
 export interface ChatSessionSummary {
   id: string;
   title: string;
   user_id: string;
+  specialist?: string | null;
   message_count: number;
   last_message?: string | null;
   created_at: string;
@@ -80,25 +91,34 @@ export class ChatbotService {
     private readonly authService: AuthService
   ) {}
 
-  ask(question: string, sessionId?: string | null): Observable<AskResponse> {
+  ask(question: string, sessionId?: string | null, specialist = 'general'): Observable<AskResponse> {
+    const payload: AskRequest = {
+      question,
+      k: 4,
+      filters: null,
+      session_id: sessionId || null,
+      specialist
+    };
+
     return this.http.post<AskResponse>(
       `${this.ragApiUrl}/ask`,
-      {
-        question,
-        k: 4,
-        filters: null,
-        session_id: sessionId || null
-      },
+      payload,
       { headers: this.getAuthHeaders() }
     );
   }
 
-  askImage(imageFile: File, question: string, sessionId?: string | null): Observable<ImageAskResponse> {
+  askImage(
+    imageFile: File,
+    question: string,
+    sessionId?: string | null,
+    specialist = 'general'
+  ): Observable<ImageAskResponse> {
     const formData = new FormData();
 
     formData.append('file', imageFile, imageFile.name);
     formData.append('question', question);
     formData.append('k', '4');
+    formData.append('specialist', specialist);
 
     if (sessionId) {
       formData.append('session_id', sessionId);
@@ -151,6 +171,7 @@ export class ChatbotService {
         k: payload.k ?? 4,
         filters: payload.filters ?? null,
         session_id: payload.session_id || null,
+        specialist: payload.specialist || 'general',
         voice_mode: payload.voice_mode === true
       }),
       signal
@@ -196,10 +217,10 @@ export class ChatbotService {
     return `${this.ragApiUrl}${audioUrl}`;
   }
 
-  createSession(title?: string): Observable<ChatSession> {
+  createSession(title?: string, specialist = 'general'): Observable<ChatSession> {
     return this.http.post<ChatSession>(
       `${this.ragApiUrl}/chat/sessions`,
-      { title: title || null },
+      { title: title || null, specialist },
       { headers: this.getAuthHeaders() }
     );
   }

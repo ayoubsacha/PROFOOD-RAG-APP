@@ -35,6 +35,15 @@
       </svg>
     </div>
 
+    <label class="specialist-select">
+      <span>Spécialiste</span>
+      <select name="specialist" [(ngModel)]="selectedSpecialist" [disabled]="isBusy">
+        <option *ngFor="let specialist of specialists" [value]="specialist.id">
+          {{ specialist.name }}
+        </option>
+      </select>
+    </label>
+
     <button class="new-session" type="button" (click)="startNewSession()" [disabled]="sessionsLoading">
       <span aria-hidden="true">+</span>
       Nouvelle conversation
@@ -60,6 +69,7 @@
 
       <span class="session-copy">
         <strong>{{ session.title }}</strong>
+        <em *ngIf="session.specialist">{{ getSpecialistLabel(session.specialist) }}</em>
         <span>{{ session.message_count }} messages</span>
       </span>
     </button>
@@ -119,10 +129,11 @@
           <div class="welcome-copy">
             <h1>ProFood AI</h1>
             <p>Bonjour, {{ displayName }}. Que souhaitez-vous découvrir aujourd'hui ?</p>
+            <span class="active-specialist">{{ selectedSpecialistName }}</span>
           </div>
 
           <div class="feature-grid">
-            <button class="feature-card" type="button" (click)="question = 'Quels produits alimentaires sont disponibles ?'">
+            <button class="feature-card" type="button" (click)="choosePrompt('Quels produits alimentaires sont disponibles ?', 'food')">
               <span class="feature-art food" aria-hidden="true">
                 <svg viewBox="0 0 64 64">
                   <path d="M12 30h40l-4 22H16z"></path>
@@ -135,7 +146,7 @@
               <small>Explorer les produits alimentaires et spécialités.</small>
             </button>
 
-            <button class="feature-card" type="button" (click)="question = 'Comment trouver des fournisseurs fiables ?'">
+            <button class="feature-card" type="button" (click)="choosePrompt('Comment trouver des fournisseurs fiables ?', 'supplier')">
               <span class="feature-art suppliers" aria-hidden="true">
                 <svg viewBox="0 0 64 64">
                   <path d="M9 34l12-12 12 12-12 12z"></path>
@@ -148,7 +159,7 @@
               <small>Connecter avec des partenaires fiables.</small>
             </button>
 
-            <button class="feature-card" type="button" (click)="question = 'Quels equipements professionnels proposez-vous ?'">
+            <button class="feature-card" type="button" (click)="choosePrompt('Quels equipements professionnels proposez-vous ?', 'equipment')">
               <span class="feature-art equipment" aria-hidden="true">
                 <svg viewBox="0 0 64 64">
                   <path d="M10 17h20v34H10z"></path>
@@ -163,7 +174,7 @@
               <small>Identifier le matériel professionnel adapté.</small>
             </button>
 
-            <button class="feature-card" type="button" (click)="question = 'Quelles questions du forum ProFood peuvent m aider ?'">
+            <button class="feature-card" type="button" (click)="choosePrompt('Quelles questions du forum ProFood peuvent m aider ?', 'general')">
               <span class="feature-art forum" aria-hidden="true">
                 <svg viewBox="0 0 64 64">
                   <path d="M12 16h28v21H22l-10 8z"></path>
@@ -197,6 +208,7 @@
           <div class="message-meta" *ngIf="message.role === 'assistant'">
             <span aria-hidden="true"></span>
             <strong>ProFood AI</strong>
+            <em>{{ getSpecialistLabel(message.specialist || selectedSpecialist) }}</em>
           </div>
 
           <img
@@ -249,7 +261,7 @@
     </div>
 
     <div class="suggestion-grid prompt-actions" *ngIf="showWelcomeState">
-      <button class="suggestion-card" type="button" (click)="question = 'Quels produits alimentaires sont disponibles ?'">
+      <button class="suggestion-card" type="button" (click)="choosePrompt('Quels produits alimentaires sont disponibles ?', 'food')">
         <span class="suggestion-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="m21 8-9-5-9 5 9 5 9-5Z"></path>
@@ -262,7 +274,7 @@
         </span>
       </button>
 
-      <button class="suggestion-card" type="button" (click)="question = 'Quels equipements professionnels proposez-vous ?'">
+      <button class="suggestion-card" type="button" (click)="choosePrompt('Quels equipements professionnels proposez-vous ?', 'equipment')">
         <span class="suggestion-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M5 4h14v6H5z"></path>
@@ -276,7 +288,7 @@
         </span>
       </button>
 
-      <button class="suggestion-card" type="button" (click)="question = 'Comment trouver des fournisseurs fiables ?'">
+      <button class="suggestion-card" type="button" (click)="choosePrompt('Comment trouver des fournisseurs fiables ?', 'supplier')">
         <span class="suggestion-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M8 12 5 9l3-3"></path>
@@ -290,7 +302,7 @@
         </span>
       </button>
 
-      <button class="suggestion-card" type="button" (click)="question = 'Quelles questions du forum ProFood peuvent m aider ?'">
+      <button class="suggestion-card" type="button" (click)="choosePrompt('Quelles questions du forum ProFood peuvent m aider ?', 'general')">
         <span class="suggestion-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24">
             <path d="M21 12a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-3.6-.74L3 21l1.3-5.4A8.5 8.5 0 1 1 21 12Z"></path>

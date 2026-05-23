@@ -38,6 +38,7 @@ from app.schemas import (
     TtsSpeakResponse,
     VoiceTranscribeResponse,
 )
+from app.specialists import normalize_specialist_id
 from app.tts import cleanup_expired_tts_files, text_to_speech
 from app.voice import delete_audio_file, save_uploaded_audio, transcribe_audio
 
@@ -151,6 +152,7 @@ def health() -> dict:
         "chat_model": settings.ollama_chat_model,
         "embedding_model": settings.ollama_embedding_model,
         "pdf_dir": str(_resolve_path(settings.pdf_dir)),
+        "rag_sources_dir": str(_resolve_path(settings.rag_sources_dir)),
         "chroma_dir": str(_resolve_path(settings.chroma_dir)),
     }
 
@@ -179,9 +181,14 @@ async def create_session(
 ) -> dict:
     user_id = current_user["user_id"]
     title = payload.title if payload else None
+    specialist = payload.specialist if payload else "general"
 
     try:
-        return await create_chat_session(user_id=user_id, title=title)
+        return await create_chat_session(
+            user_id=user_id,
+            title=title,
+            specialist=specialist,
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -257,6 +264,7 @@ async def ask_question(
 ) -> dict:
     try:
         user_id = current_user["user_id"]
+        specialist = normalize_specialist_id(payload.specialist)
 
         print("Current RAG user:", user_id)
 
@@ -264,6 +272,7 @@ async def ask_question(
             user_id=user_id,
             session_id=payload.session_id,
             title=payload.question,
+            specialist=specialist,
         )
         session_id = session["id"]
 
@@ -271,11 +280,13 @@ async def ask_question(
             user_id=user_id,
             session_id=session_id,
             content=payload.question,
+            specialist=specialist,
         )
 
         rag_response = await run_in_threadpool(
             ask,
             question=payload.question,
+            specialist=specialist,
             k=payload.k,
             filters=payload.filters,
         )
@@ -285,6 +296,7 @@ async def ask_question(
             session_id=session_id,
             content=rag_response["answer"],
             sources=rag_response.get("sources", []),
+            specialist=specialist,
         )
 
         return {
@@ -312,10 +324,12 @@ async def ask_image_question(
     session_id: Annotated[str | None, Form()] = None,
     k: Annotated[int | None, Form()] = 4,
     filters: Annotated[str | None, Form()] = None,
+    specialist: Annotated[str, Form()] = "general",
     current_user: dict = Depends(get_current_user),
 ) -> dict:
     try:
         user_id = current_user["user_id"]
+        normalized_specialist = normalize_specialist_id(specialist)
         clean_question = question.strip()
 
         if len(clean_question) < 2:
@@ -345,6 +359,7 @@ async def ask_image_question(
             user_id=user_id,
             session_id=session_id,
             title=clean_question,
+            specialist=normalized_specialist,
         )
         resolved_session_id = session["id"]
 
@@ -352,12 +367,14 @@ async def ask_image_question(
             user_id=user_id,
             session_id=resolved_session_id,
             content=f"{clean_question}\n\n[Image attached for ProFood visual analysis.]",
+            specialist=normalized_specialist,
         )
 
         rag_started = perf_counter()
         rag_response = await run_in_threadpool(
             ask,
             question=enhanced_question,
+            specialist=normalized_specialist,
             k=k,
             filters=parsed_filters,
         )
@@ -368,6 +385,7 @@ async def ask_image_question(
             session_id=resolved_session_id,
             content=rag_response["answer"],
             sources=rag_response.get("sources", []),
+            specialist=normalized_specialist,
         )
 
         return {
@@ -408,12 +426,15 @@ async def ask_question_stream(
         stop_event: Event | None = None
 
         try:
+            specialist = normalize_specialist_id(payload.specialist)
+
             print("Current streaming RAG user:", user_id)
 
             session = await ensure_chat_session(
                 user_id=user_id,
                 session_id=payload.session_id,
                 title=payload.question,
+                specialist=specialist,
             )
             session_id = session["id"]
 
@@ -421,6 +442,7 @@ async def ask_question_stream(
                 user_id=user_id,
                 session_id=session_id,
                 content=payload.question,
+                specialist=specialist,
             )
 
             yield _sse("session", {"session_id": session_id})
@@ -437,6 +459,7 @@ async def ask_question_stream(
                 try:
                     for item in stream_answer_chunks(
                         question=payload.question,
+                        specialist=specialist,
                         k=payload.k,
                         filters=payload.filters,
                         voice_mode=payload.voice_mode,
@@ -488,6 +511,7 @@ async def ask_question_stream(
                     session_id=session_id,
                     content=answer,
                     sources=sources,
+                    specialist=specialist,
                 )
 
             yield _sse("done", {"session_id": session_id})

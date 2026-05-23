@@ -24,6 +24,22 @@ API FastAPI RAG
 Réponse de Profood AI
 ```
 
+Architecture multi-specialiste ajoutee:
+
+```text
+Angular Chatbot
+  -> utilisateur choisit un specialiste
+  -> Angular envoie question + specialist + session_id
+  -> FastAPI verifie le JWT
+  -> FastAPI applique le prompt du specialiste
+  -> Chroma recherche avec le filtre metadata specialist
+  -> Ollama genere la reponse
+  -> MongoDB sauvegarde les messages avec specialist
+```
+
+Les sources RAG doivent etre placees dans `profood-rag-ollama/data/rag_sources/`.
+Chaque sous-dossier represente un domaine: `general`, `food`, `equipment`, `suppliers`, `services`, `taxonomy` ou `faq`.
+
 Nous avons 3 projets dans un seul repository :
 
 ```text

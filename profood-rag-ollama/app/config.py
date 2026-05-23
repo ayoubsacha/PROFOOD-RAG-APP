@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Chroma / data
     chroma_dir: str = "./data/chroma"
     pdf_dir: str = "./data/pdfs"
+    rag_sources_dir: str = "./data/rag_sources"
     image_upload_dir: str = "./data/images"
     collection_name: str = "profood_rag"
 
