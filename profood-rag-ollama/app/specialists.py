@@ -22,15 +22,25 @@ SPECIALIST_KEYWORDS = {
         "aliments": 2,
         "ingredient": 3,
         "ingredients": 3,
-        "farine": 2,
-        "huile": 1,
-        "olive": 1,
-        "lait": 2,
-        "fromage": 2,
-        "viande": 2,
-        "poisson": 2,
-        "epice": 2,
-        "epices": 2,
+        "farine": 3,
+        "huile": 3,
+        "olive": 2,
+        "lait": 3,
+        "fromage": 3,
+        "viande": 3,
+        "poisson": 3,
+        "epice": 3,
+        "epices": 3,
+        "fruit": 3,
+        "fruits": 3,
+        "legume": 3,
+        "legumes": 3,
+        "boisson": 3,
+        "boissons": 3,
+        "epicerie": 3,
+        "produits frais": 4,
+        "produits secs": 4,
+        "surgeles": 3,
         "conservation": 2,
         "qualite alimentaire": 3,
         "food product": 4,
@@ -41,6 +51,12 @@ SPECIALIST_KEYWORDS = {
         "equipements": 5,
         "equipment": 5,
         "materiel": 5,
+        "appareil": 4,
+        "appareils": 4,
+        "outil": 3,
+        "outils": 3,
+        "ustensile": 3,
+        "ustensiles": 3,
         "machine": 5,
         "machines": 5,
         "four": 5,
@@ -64,26 +80,47 @@ SPECIALIST_KEYWORDS = {
         "packaging equipment": 5,
     },
     "supplier": {
-        "fournisseur": 5,
-        "fournisseurs": 5,
-        "supplier": 5,
-        "suppliers": 5,
+        "fournisseur": 7,
+        "fournisseurs": 7,
+        "supplier": 7,
+        "suppliers": 7,
+        "partenaire": 6,
+        "partenaires": 6,
+        "vendeur": 6,
+        "vendeurs": 6,
+        "revendeur": 6,
+        "revendeurs": 6,
+        "fabricant": 6,
+        "fabricants": 6,
+        "importateur": 6,
+        "importateurs": 6,
         "grossiste": 3,
+        "grossistes": 3,
         "distributeur": 3,
+        "distributeurs": 3,
         "approvisionnement": 3,
-        "devis fournisseur": 4,
-        "comparer les fournisseurs": 4,
-        "choisir un fournisseur": 4,
+        "devis": 3,
+        "devis fournisseur": 7,
+        "comparer les fournisseurs": 7,
+        "choisir un fournisseur": 7,
+        "fiable": 2,
+        "fiables": 2,
     },
     "services": {
         "service": 3,
         "services": 3,
-        "livraison": 5,
-        "maintenance": 5,
-        "installation": 5,
-        "sav": 5,
-        "reparation": 5,
-        "nettoyage": 5,
+        "livraison": 7,
+        "maintenance": 7,
+        "installation": 7,
+        "assistance": 4,
+        "sav": 7,
+        "reparation": 7,
+        "nettoyage": 7,
+        "contrat": 3,
+        "contrats": 3,
+        "sla": 4,
+        "transport": 3,
+        "logistique": 3,
         "formation": 3,
         "support": 3,
         "conseil": 3,
@@ -94,6 +131,10 @@ SPECIALIST_KEYWORDS = {
         "taxonomie": 4,
         "taxonomies": 4,
         "classification": 3,
+        "famille": 3,
+        "familles": 3,
+        "sous categorie": 3,
+        "sous categories": 3,
         "domaine": 2,
         "domaines": 2,
         "unite": 2,
@@ -186,7 +227,7 @@ def _keyword_matches(text: str, keyword: str) -> bool:
     return re.search(rf"\b{re.escape(normalized_keyword)}\b", text) is not None
 
 
-def infer_specialist_from_question(question: str) -> str | None:
+def get_specialist_scores(question: str) -> dict[str, int]:
     normalized_question = _normalize_text(question)
     scores: dict[str, int] = {}
 
@@ -199,6 +240,12 @@ def infer_specialist_from_question(question: str) -> str | None:
 
         if score:
             scores[specialist_id] = score
+
+    return scores
+
+
+def infer_specialist_from_question(question: str) -> str | None:
+    scores = get_specialist_scores(question)
 
     if not scores:
         return None
@@ -219,14 +266,27 @@ def get_out_of_scope_response(selected_specialist: str, question: str) -> str | 
     if normalized_specialist == "general":
         return None
 
+    scores = get_specialist_scores(question)
+    selected_score = scores.get(normalized_specialist, 0)
     inferred_specialist = infer_specialist_from_question(question)
 
-    if not inferred_specialist or inferred_specialist == normalized_specialist:
+    if inferred_specialist and inferred_specialist != normalized_specialist:
+        official_name = OFFICIAL_SPECIALIST_NAMES[inferred_specialist]
+
+        return f"Veuillez consulter le {official_name}."
+
+    if selected_score > 0:
         return None
 
-    official_name = OFFICIAL_SPECIALIST_NAMES[inferred_specialist]
+    if scores:
+        return "Veuillez consulter le spécialiste ProFood adapté à ce domaine."
 
-    return f"Veuillez consulter le {official_name}."
+    selected_name = OFFICIAL_SPECIALIST_NAMES[normalized_specialist]
+
+    return (
+        f"Cette question ne correspond pas au domaine du {selected_name}. "
+        "Veuillez consulter le spécialiste ProFood adapté."
+    )
 
 
 def normalize_specialist_id(specialist_id: str | None) -> str:
