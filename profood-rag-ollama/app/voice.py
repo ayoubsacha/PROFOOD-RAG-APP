@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 from faster_whisper import WhisperModel
+from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
 
@@ -23,6 +24,8 @@ WHISPER_MODEL = WhisperModel(
     settings.whisper_model_size,
     device="cpu",
     compute_type="int8",
+    cpu_threads=settings.whisper_cpu_threads,
+    num_workers=settings.whisper_num_workers,
 )
 
 
@@ -59,7 +62,7 @@ async def save_uploaded_audio(file: UploadFile) -> Path:
     if not content:
         raise ValueError("Uploaded audio file is empty.")
 
-    destination.write_bytes(content)
+    await run_in_threadpool(destination.write_bytes, content)
     return destination
 
 
@@ -67,7 +70,15 @@ def transcribe_audio(file_path: str | Path) -> str:
     segments, _ = WHISPER_MODEL.transcribe(
         str(file_path),
         beam_size=1,
+        best_of=1,
+        temperature=0.0,
         vad_filter=True,
+        vad_parameters={
+            "min_silence_duration_ms": settings.whisper_vad_min_silence_ms,
+        },
+        language=settings.whisper_language or None,
+        condition_on_previous_text=False,
+        without_timestamps=True,
     )
     transcript_parts = [segment.text.strip() for segment in segments if segment.text.strip()]
 

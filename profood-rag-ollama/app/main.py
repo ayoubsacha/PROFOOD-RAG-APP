@@ -1,10 +1,15 @@
+import asyncio
+import json
 from pathlib import Path
-from typing import Annotated
+from threading import Event, Thread
+from time import perf_counter
+from typing import Annotated, Any
 
-from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
 
 from app.auth import get_current_user
 from app.chat_history import (
@@ -18,13 +23,16 @@ from app.chat_history import (
     list_chat_sessions,
 )
 from app.config import settings
-from app.rag import _resolve_path, ask, ingest_pdfs, reset_vector_store
+from app.image_vision import analyze_image_with_llava, save_uploaded_image
+from app.rag import _resolve_path, ask, ingest_pdfs, reset_vector_store, stream_answer_chunks
 from app.schemas import (
     AskRequest,
     AskResponse,
+    AskStreamRequest,
     ChatSession,
     ChatSessionCreateRequest,
     ChatSessionSummary,
+    ImageAskResponse,
     IngestResponse,
     TtsSpeakRequest,
     TtsSpeakResponse,
@@ -50,13 +58,59 @@ app.mount("/static/tts", StaticFiles(directory=str(TTS_STATIC_DIR)), name="tts_s
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+def _allowed_cors_origins() -> list[str]:
+    origins = [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ]
+
+    extra_origins = [
+        origin.strip()
+        for origin in settings.cors_extra_origins.split(",")
+        if origin.strip()
+    ]
+
+    return [*origins, *extra_origins]
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def require_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
+    role = str(current_user.get("role") or "").strip().lower()
+
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required.")
+
+    return current_user
+
+
+def _sse(event: str, data: dict[str, Any]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _parse_filters(raw_filters: str | None) -> dict[str, Any] | None:
+    if not raw_filters:
+        return None
+
+    try:
+        parsed_filters = json.loads(raw_filters)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="filters must be valid JSON.") from exc
+
+    if parsed_filters is None:
+        return None
+
+    if not isinstance(parsed_filters, dict):
+        raise HTTPException(status_code=400, detail="filters must be a JSON object.")
+
+    return parsed_filters
 
 
 @app.get("/", response_model=None)
@@ -90,9 +144,12 @@ def health() -> dict:
 
 
 @app.post("/ingest", response_model=IngestResponse)
-def ingest(reset: bool = True) -> dict:
+async def ingest(
+    reset: bool = True,
+    current_user: dict = Depends(require_admin_user),
+) -> dict:
     try:
-        return ingest_pdfs(reset=reset)
+        return await run_in_threadpool(ingest_pdfs, reset=reset)
     except Exception as exc:
         raise HTTPException(
             status_code=500,
@@ -204,7 +261,8 @@ async def ask_question(
             content=payload.question,
         )
 
-        rag_response = ask(
+        rag_response = await run_in_threadpool(
+            ask,
             question=payload.question,
             k=payload.k,
             filters=payload.filters,
@@ -235,14 +293,225 @@ async def ask_question(
         ) from exc
 
 
+@app.post("/image/ask", response_model=ImageAskResponse)
+async def ask_image_question(
+    file: Annotated[UploadFile, File(...)],
+    question: Annotated[str, Form(...)],
+    session_id: Annotated[str | None, Form()] = None,
+    k: Annotated[int | None, Form()] = 4,
+    filters: Annotated[str | None, Form()] = None,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    try:
+        user_id = current_user["user_id"]
+        clean_question = question.strip()
+
+        if len(clean_question) < 2:
+            raise ValueError("Question must contain at least 2 characters.")
+
+        parsed_filters = _parse_filters(filters)
+
+        upload_started = perf_counter()
+        image_path = await save_uploaded_image(file)
+        print(f"[timing] image upload/save time: {perf_counter() - upload_started:.3f}s")
+
+        vision_started = perf_counter()
+        image_description = await run_in_threadpool(
+            analyze_image_with_llava,
+            str(image_path),
+            clean_question,
+        )
+        print(f"[timing] llava image analysis time: {perf_counter() - vision_started:.3f}s")
+
+        enhanced_question = (
+            f"User question: {clean_question}\n\n"
+            f"Image description:\n{image_description}\n\n"
+            "Answer using ProFood knowledge and retrieved sources."
+        )
+
+        session = await ensure_chat_session(
+            user_id=user_id,
+            session_id=session_id,
+            title=clean_question,
+        )
+        resolved_session_id = session["id"]
+
+        await add_user_message(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            content=f"{clean_question}\n\n[Image attached for ProFood visual analysis.]",
+        )
+
+        rag_started = perf_counter()
+        rag_response = await run_in_threadpool(
+            ask,
+            question=enhanced_question,
+            k=k,
+            filters=parsed_filters,
+        )
+        print(f"[timing] image-enhanced RAG time: {perf_counter() - rag_started:.3f}s")
+
+        await add_assistant_message(
+            user_id=user_id,
+            session_id=resolved_session_id,
+            content=rag_response["answer"],
+            sources=rag_response.get("sources", []),
+        )
+
+        return {
+            "image_description": image_description,
+            "answer": rag_response["answer"],
+            "sources": rag_response.get("sources", []),
+            "session_id": resolved_session_id,
+        }
+
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ChatSessionNotFound as exc:
+        raise HTTPException(status_code=404, detail="Chat session not found") from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Image question answering failed. Check that Ollama is running, "
+                f"{settings.ollama_vision_model} is pulled, and documents have been ingested. "
+                f"Original error: {exc}"
+            ),
+        ) from exc
+
+
+@app.post("/ask/stream")
+async def ask_question_stream(
+    payload: AskStreamRequest,
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+) -> StreamingResponse:
+    async def event_generator():
+        user_id = current_user["user_id"]
+        session_id: str | None = None
+        answer_parts: list[str] = []
+        sources: list[dict[str, Any]] = []
+        stop_event: Event | None = None
+
+        try:
+            print("Current streaming RAG user:", user_id)
+
+            session = await ensure_chat_session(
+                user_id=user_id,
+                session_id=payload.session_id,
+                title=payload.question,
+            )
+            session_id = session["id"]
+
+            await add_user_message(
+                user_id=user_id,
+                session_id=session_id,
+                content=payload.question,
+            )
+
+            yield _sse("session", {"session_id": session_id})
+
+            loop = asyncio.get_running_loop()
+            queue: asyncio.Queue[Any] = asyncio.Queue()
+            done_marker = object()
+            stop_event = Event()
+
+            def queue_item(item: Any) -> None:
+                asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
+
+            def stream_worker() -> None:
+                try:
+                    for item in stream_answer_chunks(
+                        question=payload.question,
+                        k=payload.k,
+                        filters=payload.filters,
+                        voice_mode=payload.voice_mode,
+                        stop_event=stop_event,
+                    ):
+                        if stop_event.is_set():
+                            break
+
+                        queue_item(item)
+                except Exception as exc:
+                    queue_item({"type": "error", "message": str(exc)})
+                finally:
+                    queue_item(done_marker)
+
+            Thread(target=stream_worker, daemon=True).start()
+
+            while True:
+                if await request.is_disconnected():
+                    stop_event.set()
+                    return
+
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=0.25)
+                except asyncio.TimeoutError:
+                    continue
+
+                if item is done_marker:
+                    break
+
+                if item.get("type") == "error":
+                    raise RuntimeError(item.get("message") or "Streaming failed.")
+
+                if item.get("type") == "chunk":
+                    text = item.get("text") or ""
+
+                    if text:
+                        answer_parts.append(text)
+                        yield _sse("chunk", {"text": text})
+
+                elif item.get("type") == "sources":
+                    sources = item.get("sources") or []
+                    yield _sse("sources", {"sources": sources})
+
+            answer = "".join(answer_parts).strip()
+
+            if answer:
+                await add_assistant_message(
+                    user_id=user_id,
+                    session_id=session_id,
+                    content=answer,
+                    sources=sources,
+                )
+
+            yield _sse("done", {"session_id": session_id})
+
+        except ChatSessionNotFound:
+            yield _sse("error", {"message": "Chat session not found."})
+        except Exception as exc:
+            print(f"[stream:error] {exc}")
+            yield _sse("error", {"message": str(exc)})
+        finally:
+            if stop_event:
+                stop_event.set()
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @app.post("/voice/transcribe", response_model=VoiceTranscribeResponse)
 async def voice_transcribe(
     file: Annotated[UploadFile, File(...)],
     current_user: dict = Depends(get_current_user),
 ) -> dict:
     try:
+        upload_started = perf_counter()
         audio_path = await save_uploaded_audio(file)
-        transcript = transcribe_audio(audio_path)
+        print(f"[timing] upload/save audio time: {perf_counter() - upload_started:.3f}s")
+
+        stt_started = perf_counter()
+        transcript = await run_in_threadpool(transcribe_audio, audio_path)
+        print(f"[timing] STT transcription time: {perf_counter() - stt_started:.3f}s")
 
         return {"transcript": transcript}
 
@@ -264,7 +533,9 @@ async def tts_speak(
         raise HTTPException(status_code=400, detail="Text is required for speech synthesis.")
 
     try:
+        tts_started = perf_counter()
         audio_url = await text_to_speech(text)
+        print(f"[timing] TTS generation time: {perf_counter() - tts_started:.3f}s")
         return {"audio_url": audio_url}
 
     except Exception as exc:
@@ -275,7 +546,10 @@ async def tts_speak(
 
 
 @app.post("/upload-pdfs")
-async def upload_pdfs(files: Annotated[list[UploadFile], File(...)]) -> dict:
+async def upload_pdfs(
+    files: Annotated[list[UploadFile], File(...)],
+    current_user: dict = Depends(require_admin_user),
+) -> dict:
     pdf_dir = _resolve_path(settings.pdf_dir)
     pdf_dir.mkdir(parents=True, exist_ok=True)
 
@@ -297,6 +571,6 @@ async def upload_pdfs(files: Annotated[list[UploadFile], File(...)]) -> dict:
 
 
 @app.delete("/vector-store")
-def delete_vector_store() -> dict:
+def delete_vector_store(current_user: dict = Depends(require_admin_user)) -> dict:
     reset_vector_store()
     return {"message": "Chroma vector store reset."}

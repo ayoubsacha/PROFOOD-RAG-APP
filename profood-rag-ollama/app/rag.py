@@ -3,7 +3,10 @@ from __future__ import annotations
 import csv
 import json
 import shutil
+import time
+from collections.abc import Iterator
 from pathlib import Path
+from threading import Event
 from typing import Any
 
 from docx import Document as WordDocument
@@ -37,6 +40,30 @@ PROMPT = ChatPromptTemplate.from_messages(
     ]
 )
 
+VOICE_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "You are Profood AI, a helpful assistant for a Moroccan marketplace app "
+            "that contains food products, agriculture products, equipment, suppliers, "
+            "articles, and forum knowledge.\n\n"
+            "Rules:\n"
+            "1. Answer using ONLY the context provided.\n"
+            "2. If the context is not enough, say that Profood does not have enough data yet.\n"
+            "3. Be practical and clear.\n"
+            "4. When useful, mention which product/equipment/forum source supports the answer.\n"
+            "5. Do not invent prices, sellers, or availability.\n"
+            "6. Answer in French. Use 2 to 4 short sentences. Be direct, clear, and suitable for spoken audio.\n\n"
+            "Context:\n{context}",
+        ),
+        ("human", "Question: {question}"),
+    ]
+)
+
+_EMBEDDINGS: OllamaEmbeddings | None = None
+_LLM: ChatOllama | None = None
+_VECTOR_STORE: Chroma | None = None
+
 
 def _project_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -52,29 +79,44 @@ def _resolve_path(path_value: str) -> Path:
 
 
 def get_embeddings() -> OllamaEmbeddings:
-    return OllamaEmbeddings(
-        model=settings.ollama_embedding_model,
-        base_url=settings.ollama_base_url,
-    )
+    global _EMBEDDINGS
+
+    if _EMBEDDINGS is None:
+        _EMBEDDINGS = OllamaEmbeddings(
+            model=settings.ollama_embedding_model,
+            base_url=settings.ollama_base_url,
+        )
+
+    return _EMBEDDINGS
 
 
 def get_llm() -> ChatOllama:
-    return ChatOllama(
-        model=settings.ollama_chat_model,
-        base_url=settings.ollama_base_url,
-        temperature=0.1,
-    )
+    global _LLM
+
+    if _LLM is None:
+        _LLM = ChatOllama(
+            model=settings.ollama_chat_model,
+            base_url=settings.ollama_base_url,
+            temperature=0.1,
+        )
+
+    return _LLM
 
 
 def get_vector_store() -> Chroma:
+    global _VECTOR_STORE
+
     chroma_dir = _resolve_path(settings.chroma_dir)
     chroma_dir.mkdir(parents=True, exist_ok=True)
 
-    return Chroma(
-        collection_name=settings.collection_name,
-        embedding_function=get_embeddings(),
-        persist_directory=str(chroma_dir),
-    )
+    if _VECTOR_STORE is None:
+        _VECTOR_STORE = Chroma(
+            collection_name=settings.collection_name,
+            embedding_function=get_embeddings(),
+            persist_directory=str(chroma_dir),
+        )
+
+    return _VECTOR_STORE
 
 
 def _guess_doc_type(source_path: str) -> str:
@@ -465,6 +507,9 @@ def split_documents(docs: list[Document]) -> list[Document]:
 
 
 def reset_vector_store() -> None:
+    global _VECTOR_STORE
+
+    _VECTOR_STORE = None
     chroma_dir = _resolve_path(settings.chroma_dir)
 
     if chroma_dir.exists():
@@ -533,40 +578,7 @@ def _format_context(docs: list[Document]) -> str:
     return "\n\n".join(blocks)
 
 
-def ask(
-    question: str,
-    k: int | None = None,
-    filters: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    vector_store = get_vector_store()
-
-    search_kwargs: dict[str, Any] = {
-        "k": k or settings.top_k,
-    }
-
-    if filters:
-        search_kwargs["filter"] = filters
-
-    retriever = vector_store.as_retriever(search_kwargs=search_kwargs)
-    docs = retriever.invoke(question)
-
-    if not docs:
-        return {
-            "answer": "Profood does not have enough data yet. Try ingesting documents first with POST /ingest.",
-            "sources": [],
-        }
-
-    context = _format_context(docs)
-
-    chain = PROMPT | get_llm()
-
-    response = chain.invoke(
-        {
-            "context": context,
-            "question": question,
-        }
-    )
-
+def _build_sources(docs: list[Document]) -> list[dict[str, Any]]:
     sources = []
 
     for doc in docs:
@@ -580,7 +592,128 @@ def ask(
             }
         )
 
+    return sources
+
+
+def retrieve_documents(
+    question: str,
+    k: int | None = None,
+    filters: dict[str, Any] | None = None,
+) -> list[Document]:
+    retrieval_started = time.perf_counter()
+    vector_store = get_vector_store()
+
+    search_kwargs: dict[str, Any] = {
+        "k": k or settings.top_k,
+    }
+
+    if filters:
+        search_kwargs["filter"] = filters
+
+    retriever = vector_store.as_retriever(search_kwargs=search_kwargs)
+    docs = retriever.invoke(question)
+    print(f"[timing] retrieval time: {time.perf_counter() - retrieval_started:.3f}s")
+
+    return docs
+
+
+def _chunk_text(chunk: Any) -> str:
+    content = getattr(chunk, "content", "")
+
+    if isinstance(content, str):
+        return content
+
+    if content:
+        return str(content)
+
+    return ""
+
+
+def ask(
+    question: str,
+    k: int | None = None,
+    filters: dict[str, Any] | None = None,
+    voice_mode: bool = False,
+) -> dict[str, Any]:
+    docs = retrieve_documents(question=question, k=k, filters=filters)
+
+    if not docs:
+        return {
+            "answer": "Profood does not have enough data yet. Try ingesting documents first with POST /ingest.",
+            "sources": [],
+        }
+
+    context = _format_context(docs)
+    prompt = VOICE_PROMPT if voice_mode else PROMPT
+
+    chain = prompt | get_llm()
+    generation_started = time.perf_counter()
+
+    response = chain.invoke(
+        {
+            "context": context,
+            "question": question,
+        }
+    )
+    print(f"[timing] total LLM generation time: {time.perf_counter() - generation_started:.3f}s")
+
     return {
         "answer": response.content,
-        "sources": sources,
+        "sources": _build_sources(docs),
     }
+
+
+def stream_answer_chunks(
+    question: str,
+    k: int | None = None,
+    filters: dict[str, Any] | None = None,
+    voice_mode: bool = False,
+    stop_event: Event | None = None,
+) -> Iterator[dict[str, Any]]:
+    stream_started = time.perf_counter()
+    docs = retrieve_documents(question=question, k=k, filters=filters)
+
+    if not docs:
+        yield {
+            "type": "chunk",
+            "text": "Profood does not have enough data yet. Try ingesting documents first with POST /ingest.",
+        }
+        yield {"type": "sources", "sources": []}
+        return
+
+    context = _format_context(docs)
+    prompt = VOICE_PROMPT if voice_mode else PROMPT
+    chain = prompt | get_llm()
+    generation_started = time.perf_counter()
+    first_token_logged = False
+
+    for chunk in chain.stream(
+        {
+            "context": context,
+            "question": question,
+        }
+    ):
+        if stop_event and stop_event.is_set():
+            break
+
+        text = _chunk_text(chunk)
+
+        if not text:
+            continue
+
+        if not first_token_logged:
+            first_token_logged = True
+            print(f"[timing] first token time: {time.perf_counter() - stream_started:.3f}s")
+
+        yield {
+            "type": "chunk",
+            "text": text,
+        }
+
+    print(f"[timing] total LLM generation time: {time.perf_counter() - generation_started:.3f}s")
+
+    if not stop_event or not stop_event.is_set():
+        yield {
+            "type": "sources",
+            "sources": _build_sources(docs),
+        }
