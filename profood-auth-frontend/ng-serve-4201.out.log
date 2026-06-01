@@ -1,0 +1,15 @@
+
+> profood-auth-frontend@1.0.0 start
+> ng serve --proxy-config proxy.conf.json --port 4201
+
+Initial chunk files | Names         |  Raw size
+main.js             | main          | 107.86 kB | 
+polyfills.js        | polyfills     |  88.09 kB | 
+styles.css          | styles        |  45.71 kB | 
+
+                    | Initial total | 241.65 kB
+
+Application bundle generation complete. [1.539 seconds]
+
+Watch mode enabled. Watching for file changes...
+  ➜  Local:   http://localhost:4201/
