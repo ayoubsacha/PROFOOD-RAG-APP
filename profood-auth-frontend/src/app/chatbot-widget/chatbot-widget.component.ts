@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../auth.service';
@@ -38,6 +38,8 @@ type VoiceRecordingMode = 'dictate' | 'voice-chat';
   styleUrl: './chatbot-widget.component.css'
 })
 export class ChatbotWidgetComponent implements OnInit {
+  @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
+
   isOpen = false;
   loading = false;
   dictationLoading = false;
@@ -179,6 +181,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     if (this.isOpen) {
       this.loadSessions();
+      this.scrollToBottom();
     }
   }
 
@@ -296,6 +299,7 @@ export class ChatbotWidgetComponent implements OnInit {
         role: 'assistant',
         text: 'Vous devez vous connecter pour utiliser le chatbot ProFood.'
       });
+      this.refreshMessagesView();
 
       return;
     }
@@ -320,6 +324,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
     this.messages.push(assistantMessage);
     this.textStreamAbortController = abortController;
+    this.refreshMessagesView();
 
     void this.chatbotService.streamAsk(
       {
@@ -339,11 +344,11 @@ export class ChatbotWidgetComponent implements OnInit {
           if (!text) return;
 
           assistantMessage.text += text;
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         },
         sources: (sources) => {
           assistantMessage.sources = sources || [];
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         },
         done: (sessionId) => {
           if (sessionId) {
@@ -352,7 +357,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
           this.loading = false;
           this.loadSessions();
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         }
       },
       abortController.signal
@@ -365,7 +370,7 @@ export class ChatbotWidgetComponent implements OnInit {
         assistantMessage.text = assistantMessage.text ||
           'Desole, une erreur est survenue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.';
         this.loading = false;
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       })
       .finally(() => {
         if (this.textStreamAbortController === abortController) {
@@ -394,6 +399,7 @@ export class ChatbotWidgetComponent implements OnInit {
         role: 'assistant',
         text: 'Vous devez vous connecter pour utiliser le chatbot ProFood.'
       });
+      this.refreshMessagesView();
 
       return;
     }
@@ -423,7 +429,7 @@ export class ChatbotWidgetComponent implements OnInit {
     };
 
     this.messages.push(assistantMessage);
-    this.refreshStreamingView();
+    this.refreshMessagesView();
 
     this.chatbotService.askImage(imageFile, cleanQuestion, this.currentSessionId, this.selectedSpecialist).subscribe({
       next: (response) => {
@@ -435,7 +441,7 @@ export class ChatbotWidgetComponent implements OnInit {
         assistantMessage.sources = response.sources || [];
         assistantMessage.imageDescription = response.image_description;
         this.statusMessage = '';
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       },
       error: (error: unknown) => {
         console.error(error);
@@ -443,12 +449,12 @@ export class ChatbotWidgetComponent implements OnInit {
           'Desole, l analyse de l image a echoue. Verifiez que FastAPI est lance et que llava:7b est installe dans Ollama.';
         this.loading = false;
         this.statusMessage = '';
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       },
       complete: () => {
         this.loading = false;
         this.loadSessions();
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       }
     });
   }
@@ -519,6 +525,7 @@ export class ChatbotWidgetComponent implements OnInit {
           specialist: message.specialist || session.specialist || null
         }))
       : [];
+    this.refreshMessagesView();
   }
 
   private handleSessionError(error: unknown): void {
@@ -551,6 +558,7 @@ export class ChatbotWidgetComponent implements OnInit {
         role: 'assistant',
         text: 'Vous devez vous connecter pour utiliser le chatbot ProFood.'
       });
+      this.refreshMessagesView();
       return;
     }
 
@@ -750,7 +758,7 @@ export class ChatbotWidgetComponent implements OnInit {
           text: transcript,
           specialist: this.selectedSpecialist
         });
-        this.refreshStreamingView();
+        this.refreshMessagesView();
 
         this.askTextFromVoiceTranscript(transcript, activeVoiceLoopId);
       },
@@ -766,7 +774,7 @@ export class ChatbotWidgetComponent implements OnInit {
           role: 'assistant',
           text: 'Desole, la transcription vocale a echoue. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.'
         });
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       }
     });
   }
@@ -786,6 +794,7 @@ export class ChatbotWidgetComponent implements OnInit {
     };
 
     this.messages.push(assistantMessage);
+    this.refreshMessagesView();
 
     const abortController = new AbortController();
     this.streamAbortController = abortController;
@@ -813,12 +822,12 @@ export class ChatbotWidgetComponent implements OnInit {
           this.pendingSpeechText += text;
           this.queueCompletedSentences(false, activeVoiceLoopId);
           this.statusMessage = 'Reponse en cours...';
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         },
         sources: (sources) => {
           if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
           assistantMessage.sources = sources || [];
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         },
         done: (sessionId) => {
           if (!this.isActiveVoiceLoop(activeVoiceLoopId)) return;
@@ -836,7 +845,7 @@ export class ChatbotWidgetComponent implements OnInit {
             ? 'Generation de la voix...'
             : 'Mode vocal actif.';
           this.maybeFinishVoicePlayback(activeVoiceLoopId);
-          this.refreshStreamingView();
+          this.refreshMessagesView();
         }
       },
       abortController.signal
@@ -854,7 +863,7 @@ export class ChatbotWidgetComponent implements OnInit {
 
         assistantMessage.text = assistantMessage.text ||
           'Desole, une erreur est survenue pendant le chat vocal. Verifiez que FastAPI RAG est lance sur http://127.0.0.1:8000.';
-        this.refreshStreamingView();
+        this.refreshMessagesView();
       })
       .finally(() => {
         if (this.streamAbortController === abortController) {
@@ -933,6 +942,21 @@ export class ChatbotWidgetComponent implements OnInit {
 
   private isActiveVoiceLoop(activeVoiceLoopId: number): boolean {
     return this.voiceConversationActive && activeVoiceLoopId === this.voiceLoopId;
+  }
+
+  private scrollToBottom(): void {
+    setTimeout(() => {
+      const element = this.messagesContainer?.nativeElement;
+
+      if (element) {
+        element.scrollTop = element.scrollHeight;
+      }
+    }, 0);
+  }
+
+  private refreshMessagesView(): void {
+    this.changeDetector.detectChanges();
+    this.scrollToBottom();
   }
 
   private refreshStreamingView(): void {
